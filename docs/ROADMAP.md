@@ -55,11 +55,10 @@ moving the domain. Card payments and the extras listed under "Later" come after 
 - [x] **First staff login** created with `npm run staff:create`.
 - [x] **Atlas network access.** The deployed Worker reaches Atlas (Cloudflare Workers have no fixed IP addresses, so
   Atlas must keep allowing them; the database user's strong password is the protection).
-- [ ] **Email.** Partly done: the Resend account exists, and its key, sender and owner address are stored in Cloudflare.
-  Until firearmsacademy.ca is verified, the site sends from Resend's test sender (`onboarding@resend.dev`), which only
-  delivers to the Resend account owner, so owner notices arrive but emails to students fail. Still to do: add
-  `firearmsacademy.ca` in Resend (Domains), add its DNS records (SPF and DKIM) plus a DMARC record, then change
-  `EMAIL_FROM` to an address on the domain, set `EMAIL_REPLY_TO` to a real inbox, and update both in Cloudflare.
+- [x] **Email.** Sending from `bookings@mreinhart-fac-demo.com`, verified in Resend (SPF and DKIM set up automatically
+  through Cloudflare); tested live on November 21, 2026. Still to do: add a DMARC record; set `EMAIL_REPLY_TO` to a real
+  inbox (or forward `bookings@` with Cloudflare Email Routing) so replies arrive; and at launch, verify
+  `firearmsacademy.ca` in Resend and switch `EMAIL_FROM` to it.
 - [x] **Hosting.** Deployed with `npm run deploy` (November 20, 2026); the database, login and hourly-job secrets are
   stored in Cloudflare. Still to do: confirm the account is on Workers Paid (US$5/month), and add the Resend secrets.
 - [x] **Version control.** In a private GitHub repository: https://github.com/MReinhart1/fac.
