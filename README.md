@@ -206,7 +206,7 @@ Two things to know when working on the site:
 `.github/workflows/ci.yml` runs on GitHub:
 - **Every pull request:** lint, unit tests and end-to-end tests. The result shows on the pull request.
 - **Every merge (push) to `main`:** the same checks, then, only if they all pass, a build and `wrangler deploy` to
-  Cloudflare. The run appears under the repository's **Actions** tab, and the deploy under the **production** environment.
+  Cloudflare. Both appear under the repository's **Actions** tab. A failing test blocks the deploy.
 
 One-time setup:
 1. **Cloudflare API token.** In the Cloudflare dashboard, go to My Profile → API Tokens → Create Token, and use the
@@ -214,9 +214,10 @@ One-time setup:
 2. **GitHub secrets.** In GitHub, go to Settings → Secrets and variables → Actions → New repository secret, and add:
    - `CLOUDFLARE_API_TOKEN`: the token from step 1;
    - `CLOUDFLARE_ACCOUNT_ID`: shown on the Workers & Pages overview page in Cloudflare.
-3. **Protect `main` (recommended).** In GitHub, go to Settings → Branches → Add rule for `main`, then tick
-   "Require a pull request before merging" and "Require status checks to pass", choosing **Lint and test**. Changes
-   then reach the live site only through a pull request with passing tests.
+3. **Protect `main` (optional; private repositories need GitHub Pro or Team).** In GitHub, go to Settings → Branches →
+   Add rule for `main`, then tick "Require a pull request before merging" and "Require status checks to pass",
+   choosing **Lint and test**. GitHub then refuses to merge failing pull requests. Without it, failing code can still
+   be merged into `main`, but it is never deployed.
 
 Don't also connect Cloudflare's own Git integration (Workers Builds): the site would deploy twice on every push, and
 without waiting for the tests. If a test fails on GitHub, open the failed run: a `playwright-report` download holds

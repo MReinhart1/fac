@@ -77,9 +77,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment:
-      name: production
-      url: https://firearms-academy.michaelreinhart112.workers.dev
     env:
       # The deploy does not run the tests, so skip downloading the test MongoDB.
       MONGOMS_DISABLE_POSTINSTALL: 1
