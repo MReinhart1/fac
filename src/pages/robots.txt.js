@@ -1,5 +1,5 @@
-// /robots.txt, built from the site's address in astro.config.mjs. Only the real domain invites search engines;
-// the demo domain asks them to stay away (BaseLayout adds a matching "noindex" tag to every page).
+// /robots.txt, built from the site's address in astro.config.mjs. The site's own domain (LIVE_DOMAIN) invites search
+// engines; any other address asks them to stay away (BaseLayout adds a matching "noindex" tag to every page).
 import { LIVE_DOMAIN } from '../data/site.js'
 
 export function GET({ site }) {

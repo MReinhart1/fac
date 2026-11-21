@@ -21,9 +21,8 @@ const devProcessShim = {
   },
 }
 
-// The site's public address: used for canonical links, the sitemap and robots.txt. While it is the demo domain, search
-// engines are told not to index the site (see LIVE_DOMAIN in src/data/site.js). At launch, change it to
-// https://firearmsacademy.ca, along with BETTER_AUTH_URL and the routes in wrangler.jsonc.
+// The site's public address: used for canonical links, the sitemap and robots.txt. It must match LIVE_DOMAIN in
+// src/data/site.js, and BETTER_AUTH_URL and the routes in wrangler.jsonc.
 const SITE_URL = 'https://mreinhart-fac-demo.com'
 
 // https://docs.astro.build/en/reference/configuration-reference/

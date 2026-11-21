@@ -1,7 +1,7 @@
 // Business details used across the site. Change them here, not in pages.
 
-// The business's real domain. On any other domain (the demo, workers.dev) the site asks search engines not to index it.
-export const LIVE_DOMAIN = 'firearmsacademy.ca'
+// The site's domain. On any other address (a preview or test copy) the site asks search engines not to index it.
+export const LIVE_DOMAIN = 'mreinhart-fac-demo.com'
 
 export const site = {
   name: 'Firearms Academy Canada',

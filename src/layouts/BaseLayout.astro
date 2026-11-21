@@ -24,7 +24,7 @@ const { title, description = site.description, eyebrow, heading, hideBandOnPrint
 const fullTitle = title ? `${title} | ${site.name}` : `${site.name} | ${site.tagline}`
 const path = cleanPath(Astro.url.pathname)
 const canonical = new URL(path, Astro.site)
-// Keep the demo and preview addresses out of search results; only the real domain is indexed.
+// Keep preview and test addresses out of search results; only the site's own domain is indexed.
 const indexable = Astro.site?.hostname === LIVE_DOMAIN
 const showMobileCta = path !== '/register'
 const intro = Astro.slots.has('intro') ? await Astro.slots.render('intro') : undefined

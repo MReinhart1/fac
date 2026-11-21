@@ -6,7 +6,7 @@ import { store } from '../db.js'
 import { sendEmail } from './send.js'
 import * as t from './templates.js'
 
-const siteUrl = (BETTER_AUTH_URL || 'https://firearmsacademy.ca').replace(/\/$/, '')
+const siteUrl = (BETTER_AUTH_URL || 'https://mreinhart-fac-demo.com').replace(/\/$/, '')
 
 /** Run a notification without letting an email problem affect the caller. */
 export async function safely(task) {

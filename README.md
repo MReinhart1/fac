@@ -1,7 +1,7 @@
 # Firearms Academy Canada — website
 
-Website for [firearmsacademy.ca](https://firearmsacademy.ca), built with [Astro](https://astro.build) and Tailwind CSS 4,
-hosted on Cloudflare Workers with a MongoDB Atlas database. It has three parts:
+Website for Firearms Academy Canada, live at [mreinhart-fac-demo.com](https://mreinhart-fac-demo.com), built with
+[Astro](https://astro.build) and Tailwind CSS 4, hosted on Cloudflare Workers with a MongoDB Atlas database. It has three parts:
 
 - **Public pages.** Most are static HTML. The home and dates pages read course weekends live from the database. Only the
   contact and registration forms load JavaScript (React).
@@ -191,10 +191,10 @@ enough for checking staff passwords at sign-in.
    and `routes` in `wrangler.jsonc`. On deploy, Cloudflare creates the domain's DNS record and HTTPS certificate (the
    domain's DNS must be on Cloudflare). The `workers.dev` address is turned off, so the site has one address.
 
-**Demo domain.** The site currently runs at https://mreinhart-fac-demo.com. On any domain other than `firearmsacademy.ca`
-(`LIVE_DOMAIN` in `src/data/site.js`), `/robots.txt` and a `noindex` tag on every page keep it out of search engines.
-At launch, change the three settings above to `firearmsacademy.ca` and deploy: indexing turns on by itself. Before
-moving firearmsacademy.ca's DNS to Cloudflare, copy all its existing records, especially MX (business email).
+**Search engines.** The site runs at https://mreinhart-fac-demo.com, which is also `LIVE_DOMAIN` in `src/data/site.js`.
+On that domain `/robots.txt` invites search engines (except to `/admin`) and points them to the sitemap. Served from
+any other address, such as a preview or test copy, `/robots.txt` and a `noindex` tag on every page keep it out of
+search results. If the domain ever changes, update `LIVE_DOMAIN` along with the three settings above.
 
 Old `.php` URLs are listed under `redirects` in `astro.config.mjs`; the build turns them into a `_redirects` file that
 Cloudflare serves as real 301s. The home and dates pages are cached at Cloudflare's edge for 60 seconds and refreshed

@@ -1,4 +1,4 @@
-# Old Site Sitemap — firearmsacademy.ca
+# Old Site Sitemap
 
 No `sitemap.xml` exists on the old site (404). Pages below were discovered from site navigation, in-page links, and URL probing. Verified 2026-11-18.
 

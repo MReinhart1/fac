@@ -75,11 +75,13 @@ test('the privacy policy is linked from the footer and both forms', async ({ pag
   }
 })
 
-test('outside the real domain, search engines are asked not to index the site', async ({ page, request }) => {
-  // The tests build the site for the demo domain (SITE_URL in astro.config.mjs), not firearmsacademy.ca.
-  const robots = await request.get('/robots.txt')
-  expect(robots.status()).toBe(200)
-  expect(await robots.text()).toContain('Disallow: /')
+test('search engines may index the site on its own domain', async ({ page, request }) => {
+  // The tests build the site for its real address (SITE_URL in astro.config.mjs, LIVE_DOMAIN in src/data/site.js).
+  const robots = await (await request.get('/robots.txt')).text()
+  expect(robots).toContain('Allow: /')
+  expect(robots).toContain('Disallow: /admin')
+  expect(robots).toContain('Sitemap: https://mreinhart-fac-demo.com/sitemap-index.xml')
   await page.goto('/')
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow')
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0)
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://mreinhart-fac-demo.com/')
 })
