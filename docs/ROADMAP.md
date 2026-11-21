@@ -33,8 +33,8 @@ moving the domain. Card payments and the extras listed under "Later" come after 
   sending once a Resend key is added.
 - **Hourly job** (Cloudflare cron trigger). Sends class reminders and instructor class lists; it never changes registrations or seats.
 - **Audit log.** Records every staff change (who, what, when).
-- **Hosting.** Deployed to Cloudflare Workers at https://firearms-academy.michaelreinhart112.workers.dev (temporary
-  address until the domain moves), with the hourly job scheduled.
+- **Hosting.** Deployed to Cloudflare Workers at the demo domain https://mreinhart-fac-demo.com, with the hourly job
+  scheduled. Search engines are asked not to index the demo; indexing turns on once the site moves to firearmsacademy.ca.
 
 **Not built yet** (see Later)
 
@@ -239,10 +239,10 @@ Not included: development time, photography, and any legal review of the privacy
 ## Domain cutover, in order
 
 1. Find out where firearmsacademy.ca's DNS and email are hosted today, and get the login.
-2. Deploy with `npm run deploy` and test every page, redirect, form and the staff portal on the temporary `workers.dev`
-   address.
+2. Test every page, redirect, form and the staff portal on the demo domain, https://mreinhart-fac-demo.com.
 3. Move the domain's DNS to Cloudflare. Copy every existing record first, especially MX (business email) and the Resend
-   records. Then add firearmsacademy.ca as a custom domain on the Worker.
+   records. Then change the domain in `astro.config.mjs` (`SITE_URL`) and `wrangler.jsonc` (`BETTER_AUTH_URL`, `routes`)
+   to firearmsacademy.ca and deploy. That attaches the domain and lets search engines index the site.
 4. Confirm HTTPS works, old `.php` links redirect, a test registration arrives in the portal, and its emails are delivered.
 5. Submit the sitemap in Google Search Console and update the Google Business Profile link.
 6. Keep the old hosting account for a month as a fallback, then cancel it.

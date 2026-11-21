@@ -3,7 +3,7 @@ import MobileCta from '../components/MobileCta.astro'
 import PageBand from '../components/PageBand.astro'
 import SiteFooter from '../components/SiteFooter.astro'
 import SiteHeader from '../components/SiteHeader.astro'
-import { location, phone, site } from '../data/site.js'
+import { LIVE_DOMAIN, location, phone, site } from '../data/site.js'
 import { cleanPath } from '../utils/cleanPath.js'
 import '../styles/global.css'
 
@@ -24,6 +24,8 @@ const { title, description = site.description, eyebrow, heading, hideBandOnPrint
 const fullTitle = title ? `${title} | ${site.name}` : `${site.name} | ${site.tagline}`
 const path = cleanPath(Astro.url.pathname)
 const canonical = new URL(path, Astro.site)
+// Keep the demo and preview addresses out of search results; only the real domain is indexed.
+const indexable = Astro.site?.hostname === LIVE_DOMAIN
 const showMobileCta = path !== '/register'
 const intro = Astro.slots.has('intro') ? await Astro.slots.render('intro') : undefined
 
@@ -54,6 +56,7 @@ const schema = {
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {!indexable && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 

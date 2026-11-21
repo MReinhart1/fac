@@ -163,6 +163,7 @@ it cannot pick up a new build while running.
 | `e2e/admin-access.spec.js` | Sign in and out, safe redirects, no caching, owner vs instructor access |
 | `e2e/admin-payments.spec.js` | Unpaid list, Mark paid, Remove (with its confirmation), reference search, cash payments |
 | `e2e/admin-weekends.spec.js` | Adding and editing weekends, closing and cancelling, assigning instructors, moving and cancelling students, course-day details |
+| `e2e/console.spec.js` | Every public and staff page loads without browser errors, warnings or failed requests |
 | `e2e/emails-and-cron.spec.js` | Email log and previews; the hourly job's secret, and that it never changes seats |
 
 ## Deploying (Cloudflare Workers)
@@ -186,8 +187,14 @@ enough for checking staff passwords at sign-in.
    `EMAIL_REPLY_TO`, `OWNER_NOTIFY_EMAIL`. `MONGODB_DB` and `BETTER_AUTH_URL` are set in `wrangler.jsonc`.
 3. Deploys normally happen on GitHub (see below). `npm run deploy` still builds and uploads straight from your computer
    when needed.
-4. Add `firearmsacademy.ca` as a custom domain on the Worker. The domain's DNS must be on Cloudflare: copy all
-   existing records, especially MX (email), before switching nameservers.
+4. The site's domain is set in three places, which must match: `SITE_URL` in `astro.config.mjs`, and `BETTER_AUTH_URL`
+   and `routes` in `wrangler.jsonc`. On deploy, Cloudflare creates the domain's DNS record and HTTPS certificate (the
+   domain's DNS must be on Cloudflare). The `workers.dev` address is turned off, so the site has one address.
+
+**Demo domain.** The site currently runs at https://mreinhart-fac-demo.com. On any domain other than `firearmsacademy.ca`
+(`LIVE_DOMAIN` in `src/data/site.js`), `/robots.txt` and a `noindex` tag on every page keep it out of search engines.
+At launch, change the three settings above to `firearmsacademy.ca` and deploy: indexing turns on by itself. Before
+moving firearmsacademy.ca's DNS to Cloudflare, copy all its existing records, especially MX (business email).
 
 Old `.php` URLs are listed under `redirects` in `astro.config.mjs`; the build turns them into a `_redirects` file that
 Cloudflare serves as real 301s. The home and dates pages are cached at Cloudflare's edge for 60 seconds and refreshed

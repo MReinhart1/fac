@@ -15,12 +15,22 @@ export async function loadPublicSessions() {
 // Anything that changes seats calls refreshDatePages(), so visitors see the change straight away.
 export const PUBLIC_CACHE = { maxAge: 60, swr: 300, tags: ['course-dates'] }
 
+// Cloudflare's local runtime (`npm run dev`, `wrangler dev`, the end-to-end tests) has no cache purge, and caches nothing
+// for it to purge. Once that is detected, stop trying, after saying so once.
+let purgeUnavailable = false
+
 /** Drop cached date pages. `cache` is Astro.cache (pages) or context.cache (API routes). Never throws. */
 export async function refreshDatePages(cache) {
+  if (!cache?.enabled || purgeUnavailable) return
   try {
-    if (cache?.enabled) await cache.invalidate({ tags: ['course-dates'] })
+    await cache.invalidate({ tags: ['course-dates'] })
   } catch (error) {
-    // Local `wrangler dev` cannot purge the edge cache; cached pages then simply expire after 60 seconds.
+    if (error instanceof TypeError && /purge is not a function/.test(error.message)) {
+      purgeUnavailable = true
+      console.info('Cache purge is not available in the local runtime; skipping it (nothing is cached locally).')
+      return
+    }
+    // On the live site this would leave the dates pages up to 60 seconds out of date, so make it visible.
     console.warn('Could not refresh cached date pages:', error?.message ?? error)
   }
 }

@@ -74,3 +74,12 @@ test('the privacy policy is linked from the footer and both forms', async ({ pag
     await expect(page.getByRole('link', { name: 'privacy policy', exact: true })).toHaveAttribute('href', '/privacy')
   }
 })
+
+test('outside the real domain, search engines are asked not to index the site', async ({ page, request }) => {
+  // The tests build the site for the demo domain (SITE_URL in astro.config.mjs), not firearmsacademy.ca.
+  const robots = await request.get('/robots.txt')
+  expect(robots.status()).toBe(200)
+  expect(await robots.text()).toContain('Disallow: /')
+  await page.goto('/')
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow')
+})
