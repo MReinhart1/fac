@@ -1,7 +1,7 @@
 # Firearms Academy Canada — website
 
-Website for [firearmsacademy.ca](https://firearmsacademy.ca), built with [Astro](https://astro.build) and Tailwind CSS 4,
-hosted on Cloudflare Workers with a MongoDB Atlas database. It has three parts:
+Website for Firearms Academy Canada, live at [mreinhart-fac-demo.com](https://mreinhart-fac-demo.com), built with
+[Astro](https://astro.build) and Tailwind CSS 4, hosted on Cloudflare Workers with a MongoDB Atlas database. It has three parts:
 
 - **Public pages.** Most are static HTML. The home and dates pages read course weekends live from the database. Only the
   contact and registration forms load JavaScript (React).
@@ -163,6 +163,7 @@ it cannot pick up a new build while running.
 | `e2e/admin-access.spec.js` | Sign in and out, safe redirects, no caching, owner vs instructor access |
 | `e2e/admin-payments.spec.js` | Unpaid list, Mark paid, Remove (with its confirmation), reference search, cash payments |
 | `e2e/admin-weekends.spec.js` | Adding and editing weekends, closing and cancelling, assigning instructors, moving and cancelling students, course-day details |
+| `e2e/console.spec.js` | Every public and staff page loads without browser errors, warnings or failed requests |
 | `e2e/emails-and-cron.spec.js` | Email log and previews; the hourly job's secret, and that it never changes seats |
 
 ## Deploying (Cloudflare Workers)
@@ -186,8 +187,15 @@ enough for checking staff passwords at sign-in.
    `EMAIL_REPLY_TO`, `OWNER_NOTIFY_EMAIL`. `MONGODB_DB` and `BETTER_AUTH_URL` are set in `wrangler.jsonc`.
 3. Deploys normally happen on GitHub (see below). `npm run deploy` still builds and uploads straight from your computer
    when needed.
-4. Add `firearmsacademy.ca` as a custom domain on the Worker. The domain's DNS must be on Cloudflare: copy all
-   existing records, especially MX (email), before switching nameservers.
+4. The site's domain is set in three places, which must match: `SITE_URL` in `astro.config.mjs`, and `BETTER_AUTH_URL`
+   and `routes` in `wrangler.jsonc`. On deploy, Cloudflare creates the domain's DNS record and HTTPS certificate (the
+   domain's DNS must be on Cloudflare). The `workers.dev` address is turned off, so the site has one address.
+
+**Search engines.** The site runs at https://mreinhart-fac-demo.com (`LIVE_DOMAIN` in `src/data/site.js`; update it
+along with the three settings above if the domain changes). It is a demo, so `allowSearchEngines` in the same file is
+off: every page carries a `noindex` tag, and `/robots.txt` lists no sitemap. Crawlers may still read the pages, on
+purpose, because a crawler blocked by robots.txt never sees the `noindex` tag and could list the address anyway.
+Turning `allowSearchEngines` on (only for a real launch on the business's own domain) lets search engines list it.
 
 Old `.php` URLs are listed under `redirects` in `astro.config.mjs`; the build turns them into a `_redirects` file that
 Cloudflare serves as real 301s. The home and dates pages are cached at Cloudflare's edge for 60 seconds and refreshed
@@ -206,7 +214,7 @@ Two things to know when working on the site:
 `.github/workflows/ci.yml` runs on GitHub:
 - **Every pull request:** lint, unit tests and end-to-end tests. The result shows on the pull request.
 - **Every merge (push) to `main`:** the same checks, then, only if they all pass, a build and `wrangler deploy` to
-  Cloudflare. The run appears under the repository's **Actions** tab, and the deploy under the **production** environment.
+  Cloudflare. Both appear under the repository's **Actions** tab. A failing test blocks the deploy.
 
 One-time setup:
 1. **Cloudflare API token.** In the Cloudflare dashboard, go to My Profile → API Tokens → Create Token, and use the
@@ -214,9 +222,10 @@ One-time setup:
 2. **GitHub secrets.** In GitHub, go to Settings → Secrets and variables → Actions → New repository secret, and add:
    - `CLOUDFLARE_API_TOKEN`: the token from step 1;
    - `CLOUDFLARE_ACCOUNT_ID`: shown on the Workers & Pages overview page in Cloudflare.
-3. **Protect `main` (recommended).** In GitHub, go to Settings → Branches → Add rule for `main`, then tick
-   "Require a pull request before merging" and "Require status checks to pass", choosing **Lint and test**. Changes
-   then reach the live site only through a pull request with passing tests.
+3. **Protect `main` (optional; private repositories need GitHub Pro or Team).** In GitHub, go to Settings → Branches →
+   Add rule for `main`, then tick "Require a pull request before merging" and "Require status checks to pass",
+   choosing **Lint and test**. GitHub then refuses to merge failing pull requests. Without it, failing code can still
+   be merged into `main`, but it is never deployed.
 
 Don't also connect Cloudflare's own Git integration (Workers Builds): the site would deploy twice on every push, and
 without waiting for the tests. If a test fails on GitHub, open the failed run: a `playwright-report` download holds

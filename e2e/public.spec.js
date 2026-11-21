@@ -74,3 +74,16 @@ test('the privacy policy is linked from the footer and both forms', async ({ pag
     await expect(page.getByRole('link', { name: 'privacy policy', exact: true })).toHaveAttribute('href', '/privacy')
   }
 })
+
+test('search engines are asked not to list the demo site', async ({ page, request }) => {
+  // allowSearchEngines is off in src/data/site.js. Crawlers may read the pages (so they see the noindex tag)
+  // but are not pointed to a sitemap.
+  const robots = await (await request.get('/robots.txt')).text()
+  expect(robots).toContain('Allow: /')
+  expect(robots).toContain('Disallow: /admin')
+  expect(robots).not.toContain('Sitemap:')
+  for (const path of ['/', '/dates', '/register', '/privacy']) {
+    await page.goto(path)
+    await expect(page.locator('meta[name="robots"]'), path).toHaveAttribute('content', 'noindex, nofollow')
+  }
+})

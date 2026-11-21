@@ -12,5 +12,11 @@
   "assets": { "binding": "ASSETS", "html_handling": "drop-trailing-slash" },
   // Secrets are not stored here. Production: `npx wrangler secret put NAME` for each variable in .env.example.
   // Local development reads them from .env.
-  "vars": { "MONGODB_DB": "fac", "BETTER_AUTH_URL": "https://firearmsacademy.ca" }
+  "vars": { "MONGODB_DB": "fac", "BETTER_AUTH_URL": "https://mreinhart-fac-demo.com" },
+  // The site's domain. Cloudflare creates the DNS record and HTTPS certificate on deploy (the domain's DNS is on
+  // Cloudflare). It must match BETTER_AUTH_URL above and SITE_URL in astro.config.mjs.
+  "routes": [{ "pattern": "mreinhart-fac-demo.com", "custom_domain": true }],
+  // Serve the site only on its domain: no extra *.workers.dev address and no per-version preview addresses.
+  "workers_dev": false,
+  "preview_urls": false
 }

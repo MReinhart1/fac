@@ -21,9 +21,13 @@ const devProcessShim = {
   },
 }
 
+// The site's public address: used for canonical links, the sitemap and robots.txt. It must match LIVE_DOMAIN in
+// src/data/site.js, and BETTER_AUTH_URL and the routes in wrangler.jsonc.
+const SITE_URL = 'https://mreinhart-fac-demo.com'
+
 // https://docs.astro.build/en/reference/configuration-reference/
 export default defineConfig({
-  site: 'https://firearmsacademy.ca',
+  site: SITE_URL,
   // Clean URLs like /faq (no trailing slash), matching the links used throughout the site.
   trailingSlash: 'never',
   // Hosted on Cloudflare Workers (wrangler.jsonc). Static pages are served as assets; the registration API,

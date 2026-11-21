@@ -4,9 +4,9 @@ As of November 20, 2026. Copied from the shared doc: https://claude.ai/artifact/
 
 ## Where the site stands
 
-The website, database, staff portal and automatic emails are built and tested. What stands between the new site and
-going live is mostly setup and content: accounts (Cloudflare, Resend), a few settings, a privacy policy page, photos, and
-moving the domain. Card payments and the extras listed under "Later" come after launch.
+The website, database, staff portal and automatic emails are built, tested and live at https://mreinhart-fac-demo.com.
+What is left is mostly content and settings: the owner's booking rules and privacy answers, a content check, and photos.
+Card payments and the extras listed under "Later" come later.
 
 **Built and working**
 
@@ -33,8 +33,8 @@ moving the domain. Card payments and the extras listed under "Later" come after 
   sending once a Resend key is added.
 - **Hourly job** (Cloudflare cron trigger). Sends class reminders and instructor class lists; it never changes registrations or seats.
 - **Audit log.** Records every staff change (who, what, when).
-- **Hosting.** Deployed to Cloudflare Workers at https://firearms-academy.michaelreinhart112.workers.dev (temporary
-  address until the domain moves), with the hourly job scheduled.
+- **Hosting.** Deployed to Cloudflare Workers at https://mreinhart-fac-demo.com (domain and DNS on Cloudflare), with the
+  hourly job scheduled.
 
 **Not built yet** (see Later)
 
@@ -55,11 +55,9 @@ moving the domain. Card payments and the extras listed under "Later" come after 
 - [x] **First staff login** created with `npm run staff:create`.
 - [x] **Atlas network access.** The deployed Worker reaches Atlas (Cloudflare Workers have no fixed IP addresses, so
   Atlas must keep allowing them; the database user's strong password is the protection).
-- [ ] **Email.** Partly done: the Resend account exists, and its key, sender and owner address are stored in Cloudflare.
-  Until firearmsacademy.ca is verified, the site sends from Resend's test sender (`onboarding@resend.dev`), which only
-  delivers to the Resend account owner, so owner notices arrive but emails to students fail. Still to do: add
-  `firearmsacademy.ca` in Resend (Domains), add its DNS records (SPF and DKIM) plus a DMARC record, then change
-  `EMAIL_FROM` to an address on the domain, set `EMAIL_REPLY_TO` to a real inbox, and update both in Cloudflare.
+- [x] **Email.** Sending from `bookings@mreinhart-fac-demo.com`, verified in Resend (SPF and DKIM set up automatically
+  through Cloudflare); tested live on November 21, 2026. Still to do: add a DMARC record; set `EMAIL_REPLY_TO` to a real
+  inbox (or forward `bookings@` with Cloudflare Email Routing) so replies arrive.
 - [x] **Hosting.** Deployed with `npm run deploy` (November 20, 2026); the database, login and hourly-job secrets are
   stored in Cloudflare. Still to do: confirm the account is on Workers Paid (US$5/month), and add the Resend secrets.
 - [x] **Version control.** In a private GitHub repository: https://github.com/MReinhart1/fac.
@@ -70,7 +68,7 @@ moving the domain. Card payments and the extras listed under "Later" come after 
 - [ ] **Privacy policy page.** Drafted at `/privacy` and linked from the footer and both forms. Until the owner fills in
   `privacy` in `src/data/site.js` (how long records are kept, and a name and email for privacy questions), the page shows
   "to be confirmed" in those places and a draft notice at the top. Worth a quick legal read before launch.
-- [ ] **Domain cutover.** Point firearmsacademy.ca at the Worker without breaking the business email (see below).
+- [x] **Domain.** The site runs at https://mreinhart-fac-demo.com, registered on Cloudflare, with HTTPS (see Domain below).
 
 Nice before launch, not blocking: check the old external links on the Links page, and test every email once Resend is set
 up (the portal's **Emails** page previews each one).
@@ -221,7 +219,7 @@ checked on each provider's pricing page on November 20, 2026.
 | MongoDB Atlas | Database | Flex: US$8 up to 100 operations a second (5 GB storage), stepping up to a US$30 cap only under heavy load | US$8 |
 | Better Auth | Staff login | Open-source library, stored in Atlas | US$0 |
 | Resend | Automatic emails | Free: 3,000 emails a month, 100 a day, 3 domains. Pro is US$20 for 50,000 if ever needed | US$0 |
-| Domain renewal | firearmsacademy.ca | Existing registrar (or Cloudflare Registrar) | about US$2 (not checked) |
+| Domain renewal | mreinhart-fac-demo.com | Cloudflare Registrar | about US$1 (not checked) |
 | **Total** | | | **about US$15** |
 
 **Card payments, if added.** Stripe's standard Canadian rate is 2.9% + CA$0.30 per payment (more for cards issued
@@ -236,16 +234,18 @@ Not included: development time, photography, and any legal review of the privacy
 [Resend pricing](https://resend.com/pricing),
 [Stripe Canada](https://support.stripe.com/questions/2024-pricing-update-for-canadian-businesses).
 
-## Domain cutover, in order
+## Domain
 
-1. Find out where firearmsacademy.ca's DNS and email are hosted today, and get the login.
-2. Deploy with `npm run deploy` and test every page, redirect, form and the staff portal on the temporary `workers.dev`
-   address.
-3. Move the domain's DNS to Cloudflare. Copy every existing record first, especially MX (business email) and the Resend
-   records. Then add firearmsacademy.ca as a custom domain on the Worker.
-4. Confirm HTTPS works, old `.php` links redirect, a test registration arrives in the portal, and its emails are delivered.
-5. Submit the sitemap in Google Search Console and update the Google Business Profile link.
-6. Keep the old hosting account for a month as a fallback, then cancel it.
+The site runs at https://mreinhart-fac-demo.com. The domain is registered on Cloudflare, so its DNS is there too, and
+Cloudflare issues the HTTPS certificate. The domain is set in four places that must match: `SITE_URL` in
+`astro.config.mjs`, `LIVE_DOMAIN` in `src/data/site.js`, and `BETTER_AUTH_URL` and `routes` in `wrangler.jsonc`.
+
+Left to do:
+
+1. Add a `www` redirect if wanted (Cloudflare → Rules → Redirect Rules, "Redirect from WWW to root").
+
+The site is a demo, so search engines are asked not to list it (`allowSearchEngines` in `src/data/site.js` is off; every
+page carries a `noindex` tag).
 
 ## Later
 
@@ -266,7 +266,6 @@ None of these block launch. They are roughly in order of usefulness.
 ## Open questions for the owner
 
 - [ ] Which email address receives e-Transfers, and is Autodeposit on?
-- [ ] Where are the domain's DNS and email hosted, and who has the login?
 - [ ] How many seats per class? Is capacity different for Saturday (CFSC) and Sunday (CRFSC)?
 - [ ] How soon should students pay after registering (48 hours now), and how long does the owner wait before removing an unpaid student?
 - [ ] How many instructors need logins?
