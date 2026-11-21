@@ -19,7 +19,7 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     // The public pages and forms again at phone size (menu button, stacked layout). The staff portal is desktop-only.
-    { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: ['public.spec.js', 'registration.spec.js', 'contact.spec.js'] },
+    { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: ['public.spec.js', 'registration.spec.js', 'contact.spec.js', 'accessibility.spec.js'] },
   ],
   webServer: {
     command: 'node e2e/server.mjs',

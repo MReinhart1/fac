@@ -3,7 +3,7 @@
 
 export const E2E = {
   sitePort: 4390,
-  dbPort: 27032,
+  dbPort: 27_032,
   mailPort: 4391,
   dbName: 'e2e',
   cronSecret: 'e2e-cron-secret',

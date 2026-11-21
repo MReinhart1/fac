@@ -78,6 +78,18 @@ To run a script against the live database instead, prefix it, for example
    instructors), class lists, payments (search by reference, mark paid, remove unpaid students, refunds, moving a student to another weekend)
    and contact messages. Instructors see only the weekends they are assigned to, without payment amounts.
 
+**What is stored.** Five collections, plus the login collections Better Auth creates (`user`, `session`, `account`,
+`verification`; role `admin` = owner, `user` = instructor). Packages, prices and the class location stay in code
+(`src/data/`). Money is in cents; course dates are calendar dates in Toronto time.
+
+| Collection | Holds |
+| --- | --- |
+| `courseSessions` | One course weekend: Saturday date (unique), capacity, seats taken, status (open, closed, cancelled), assigned instructors, notes |
+| `registrations` | A student booked into a weekend: payment reference (unique), package, amount due, status (pending, paid, cancelled), student details, PAL details (restricted-only packages), consent form, attendance, staff notes, payments and refunds, moves |
+| `messages` | Contact-form messages, with who read them |
+| `auditLog` | Every staff change: who, what, when |
+| `emailLog` | Every email the site tried to send, and whether it went |
+
 How bookings work: a registration takes a seat straight away and keeps it until staff change it. Students are asked to
 pay within `booking.payWithinHours` (48) hours, but nothing happens automatically when they don't. The owner sees every
 unpaid registration, with the date it was made, on the portal's **Payments** page and removes students who haven't paid
@@ -163,6 +175,8 @@ it cannot pick up a new build while running.
 | `e2e/admin-access.spec.js` | Sign in and out, safe redirects, no caching, owner vs instructor access |
 | `e2e/admin-payments.spec.js` | Unpaid list, Mark paid, Remove (with its confirmation), reference search, cash payments |
 | `e2e/admin-weekends.spec.js` | Adding and editing weekends, closing and cancelling, assigning instructors, moving and cancelling students, course-day details |
+| `e2e/accessibility.spec.js` | Accessibility (axe-core: WCAG 2.0–2.2 A and AA plus best practices) at desktop and phone size: every page, the open mobile menu, form errors and confirmations, the staff portal for owner and instructor, and the keyboard "Skip to content" link |
+| `e2e/seo.spec.js` | Every public page has its own title and description, one main heading and the right canonical address |
 | `e2e/console.spec.js` | Every public and staff page loads without browser errors, warnings or failed requests |
 | `e2e/emails-and-cron.spec.js` | Email log and previews; the hourly job's secret, and that it never changes seats |
 
@@ -197,9 +211,18 @@ off: every page carries a `noindex` tag, and `/robots.txt` lists no sitemap. Cra
 purpose, because a crawler blocked by robots.txt never sees the `noindex` tag and could list the address anyway.
 Turning `allowSearchEngines` on (only for a real launch on the business's own domain) lets search engines list it.
 
-Old `.php` URLs are listed under `redirects` in `astro.config.mjs`; the build turns them into a `_redirects` file that
-Cloudflare serves as real 301s. The home and dates pages are cached at Cloudflare's edge for 60 seconds and refreshed
-whenever seats change.
+The home and dates pages are cached at Cloudflare's edge for 60 seconds and refreshed whenever seats change.
+
+**Old website addresses.** Links to the old PHP site keep working: `redirects` in `astro.config.mjs` becomes a
+`_redirects` file that Cloudflare serves as permanent (301) redirects.
+
+| Old address | New page |
+| --- | --- |
+| `/index.php` | `/` |
+| `/courses.php` | `/#courses` (course cards on the home page) |
+| `/dates.php`, `/locations.php`, `/pricing.php`, `/register.php`, `/faq.php`, `/contact.php`, `/certified.php`, `/links.php` | Same name without `.php` |
+| `/ohep.php` | `/hunter-education` |
+| `/consent-form-2019.pdf` | `/consent` (printable form; the old PDF was already gone) |
 
 Two things to know when working on the site:
 - **One database connection per request.** Workers can't reuse a connection across requests, so `src/middleware.js`
@@ -233,4 +256,4 @@ screenshots and a trace of each failed browser test.
 
 ## Roadmap
 
-What is built, what is left before launch, what could come later, and monthly costs: [docs/ROADMAP.md](docs/ROADMAP.md).
+What is left to do, booking and payment rules, privacy checklist, monthly costs and ideas for later: [docs/ROADMAP.md](docs/ROADMAP.md).

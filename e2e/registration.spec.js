@@ -28,13 +28,13 @@ test('registering takes a seat and shows e-Transfer instructions', async ({ page
   await expect(instructions).toContainText('within 48 hours')
 
   const reg = await db.collection('registrations').findOne({ 'student.familyName': 'Tester' })
-  expect(reg).toMatchObject({ status: 'pending', packageId: 'cfsc', amountDueCents: 25830, startDate: weekends.open.startDate })
+  expect(reg).toMatchObject({ status: 'pending', packageId: 'cfsc', amountDueCents: 25_830, startDate: weekends.open.startDate })
   expect(reg).not.toHaveProperty('holdExpiresAt')
   const weekend = await db.collection('courseSessions').findOne({ startDate: weekends.open.startDate })
   expect(weekend.seatsTaken).toBe(1)
 
   const sent = await emails()
-  expect(sent.map((email) => email.to[0]).sort()).toEqual([OWNER_NOTIFY_EMAIL, 'pat@example.test'].sort())
+  expect(sent.map((email) => email.to[0]).toSorted()).toEqual([OWNER_NOTIFY_EMAIL, 'pat@example.test'].toSorted())
   const studentEmail = sent.find((email) => email.to[0] === 'pat@example.test')
   expect(studentEmail.subject).toContain(reg.reference)
   expect(studentEmail.text).toContain('$258.30')
@@ -52,7 +52,7 @@ test('owning the student guide lowers the price', async ({ page, db, weekends })
   await page.getByRole('button', { name: 'Submit registration' }).click()
   await expect(page.getByText('Registration received, Pat')).toBeVisible()
   const reg = await db.collection('registrations').findOne({})
-  expect(reg).toMatchObject({ amountDueCents: 23730, hasGuide: true })
+  expect(reg).toMatchObject({ amountDueCents: 23_730, hasGuide: true })
 })
 
 test('mismatched email addresses are caught before anything is saved', async ({ page, db, weekends }) => {
@@ -113,7 +113,7 @@ test('two people racing for the last seat: only one gets it', async ({ request, 
       request.post('/api/register', { data: registrationBody(weekends.small, { familyName: name }) }),
     ),
   )
-  expect(attempts.map((response) => response.status()).sort()).toEqual([201, 409, 409, 409, 409])
+  expect(attempts.map((response) => response.status()).toSorted()).toEqual([201, 409, 409, 409, 409])
   expect(await db.collection('registrations').countDocuments()).toBe(1)
   const weekend = await db.collection('courseSessions').findOne({ startDate: weekends.small.startDate })
   expect(weekend.seatsTaken).toBe(1)

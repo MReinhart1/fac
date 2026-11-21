@@ -1,0 +1,21 @@
+---
+// Shown when a page fails on the server, most likely because the database could not be reached.
+// It must not use the database itself. The error is logged by Astro; visitors never see its details.
+import Phone from '@lucide/astro/icons/phone'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { phone } from '../data/site.js'
+---
+
+<BaseLayout title="Something went wrong" eyebrow="Error" heading="Something went wrong on our side">
+  <Fragment slot="intro">Sorry, this page could not be loaded. Please try again in a few minutes.</Fragment>
+  <div class="grid max-w-[640px] gap-6">
+    <p class="body-text">
+      To register for a course or ask a question in the meantime, call us. If you were registering, check your email before trying again:
+      if a "Registration received" email arrived, your seat is already booked.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a class="btn" href={phone.href}><Phone size={18} /> Call {phone.display}</a>
+      <a class="btn btn-outline" href="/">Go to the home page</a>
+    </div>
+  </div>
+</BaseLayout>

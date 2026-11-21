@@ -152,7 +152,7 @@ export function createStore(db, client) {
         await audit(actor, 'session.create', { type: 'courseSession', id: insertedId.toString() }, { startDate, capacity })
         return insertedId.toString()
       } catch (error) {
-        if (error?.code === 11000) throw new StoreError('duplicate', 'There is already a course weekend on that date.')
+        if (error?.code === 11_000) throw new StoreError('duplicate', 'There is already a course weekend on that date.')
         throw error
       }
     },
@@ -217,6 +217,8 @@ export function createStore(db, client) {
           updatedAt: now,
         }
         try {
+          // Retries are deliberately sequential: each attempt only runs if the previous reference collided.
+          // oxlint-disable-next-line no-await-in-loop
           await transaction(async (session) => {
             const seat = await takeSeat(courseSessionId, session)
             if (!seat) throw new StoreError('full', 'Sorry, that date just filled up. Please choose another date.')
@@ -234,7 +236,7 @@ export function createStore(db, client) {
           }
         } catch (error) {
           // A clash on the random payment reference: try again with a new one.
-          if (error?.code === 11000 && error?.keyPattern?.reference) continue
+          if (error?.code === 11_000 && error?.keyPattern?.reference) continue
           throw error
         }
       }

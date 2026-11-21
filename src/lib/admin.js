@@ -41,7 +41,7 @@ export function messageFor(error) {
  * thousands) and "258,30" (French-style decimal comma). Anything else with a comma, like "12,34,56", is refused.
  */
 export function centsFrom(value) {
-  let clean = String(value ?? '').replace(/[$\s]/g, '')
+  let clean = String(value ?? '').replaceAll(/[$\s]/g, '')
   if (/^\d{1,3}(,\d{3})+(\.\d{1,2})?$/.test(clean)) clean = clean.replaceAll(',', '')
   else if (/^\d+,\d{1,2}$/.test(clean)) clean = clean.replace(',', '.')
   if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null

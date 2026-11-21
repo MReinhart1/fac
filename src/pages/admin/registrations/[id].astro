@@ -200,7 +200,8 @@ const dt = 'text-muted'
             <form method="post" class="card grid gap-3 p-5">
               <input type="hidden" name="action" value="move" />
               <h2 class="card-heading mb-0">Move to another weekend</h2>
-              <select class="field" name="toSessionId" required>
+              <label class="field-label" for="toSessionId">New weekend</label>
+              <select class="field" id="toSessionId" name="toSessionId" required>
                 {otherWeekends.map((w) => (
                   <option value={w.id}>
                     {w.label} ({w.seatsLeft} left)

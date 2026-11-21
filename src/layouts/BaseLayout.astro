@@ -67,13 +67,6 @@ const schema = {
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content="en_CA" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
-      rel="stylesheet"
-    />
-
     {businessSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />}
   </head>
   <body class:list={['min-h-screen min-w-80 bg-white font-sans text-navy antialiased', { 'max-nav:pb-[72px]': showMobileCta }]}>

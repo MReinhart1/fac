@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react'
+import { useId, useState, useSyncExternalStore } from 'react'
 import { DEFAULT_PACKAGE_ID, findPackage, GUIDE_PRICE, money, packages } from '../../data/courses.js'
 import { booking, phone } from '../../data/site.js'
 import { Checkbox, Field, FormStatus, Honeypot, SubmitButton } from './fields.jsx'
@@ -19,12 +19,30 @@ const readDateParam = readParam('date')
 // Local yyyy-mm-dd, so the PAL course date picker cannot go past today.
 const readToday = () => new Date().toLocaleDateString('en-CA')
 
+const NO_SESSIONS = []
+
+function datePlaceholder(hasBookable, unavailable) {
+  if (hasBookable) return 'Select a date'
+  if (unavailable) return `Dates unavailable — please call ${phone.display}`
+  return 'No dates open — please contact us'
+}
+
+function seatNote({ full, seatsLeft }) {
+  if (full) return ' (full)'
+  if (seatsLeft > 5) return ''
+  return ` (${seatsLeft} ${seatsLeft === 1 ? 'seat' : 'seats'} left)`
+}
+
+// A numbered part of the form. Its visible heading is a real heading (so the policy's sub-headings sit under it)
+// and also names the group of fields for screen readers.
 function Section({ number, title, children }) {
+  const headingId = useId()
   return (
-    <fieldset className="card relative m-0 min-w-0 px-5 pt-5 pb-6 nav:px-7 nav:pt-6 nav:pb-7">
-      <legend className="sr-only">{title}</legend>
-      <h2 className="mb-5 flex items-center gap-3 font-display text-lg font-bold" aria-hidden="true">
-        <span className="grid size-8 place-items-center rounded-full bg-navy text-sm text-cream">{number}</span>
+    <fieldset className="card relative m-0 min-w-0 px-5 pt-5 pb-6 nav:px-7 nav:pt-6 nav:pb-7" aria-labelledby={headingId}>
+      <h2 id={headingId} className="mb-5 flex items-center gap-3 font-display text-lg font-bold">
+        <span className="grid size-8 place-items-center rounded-full bg-navy text-sm text-cream" aria-hidden="true">
+          {number}
+        </span>
         {title}
       </h2>
       {children}
@@ -36,11 +54,11 @@ function Section({ number, title, children }) {
  * `sessions` are the upcoming course weekends, read live from the database by the page:
  * { id, start, label, full, seatsLeft }. The server re-checks seats and prices when the form is sent.
  */
-export default function RegisterForm({ sessions = [], unavailable = false }) {
+export default function RegisterForm({ sessions = NO_SESSIONS, unavailable = false }) {
   // ?course= and ?date= come from the Register links on course, pricing and date listings.
   const requestedCourse = useBrowserValue(readCourseParam, null)
   const requestedDate = useBrowserValue(readDateParam, null)
-  const today = useBrowserValue(readToday, undefined)
+  const today = useBrowserValue(readToday)
   const [chosenCourse, setChosenCourse] = useState(null)
   const [chosenSession, setChosenSession] = useState(null)
   const [hasGuide, setHasGuide] = useState(false)
@@ -58,7 +76,7 @@ export default function RegisterForm({ sessions = [], unavailable = false }) {
   const [status, submit] = useFormSubmit('/api/register', {
     extra: () => ({ hasGuide }),
     validate: (data) =>
-      data.email.trim().toLowerCase() !== data.confirmEmail.trim().toLowerCase() ? 'The email addresses do not match.' : null,
+      data.email.trim().toLowerCase() === data.confirmEmail.trim().toLowerCase() ? null : 'The email addresses do not match.',
     onSent: (reply) => {
       setRegistration(reply.reference ? reply : null)
       setChosenCourse(null)
@@ -112,12 +130,12 @@ export default function RegisterForm({ sessions = [], unavailable = false }) {
               onChange={(event) => setChosenSession(event.target.value)}
             >
               <option value="" disabled>
-                {bookable.length ? 'Select a date' : unavailable ? `Dates unavailable — please call ${phone.display}` : 'No dates open — please contact us'}
+                {datePlaceholder(bookable.length > 0, unavailable)}
               </option>
               {sessions.map((item) => (
                 <option key={item.id} value={item.id} disabled={item.full}>
                   {item.label}
-                  {item.full ? ' (full)' : item.seatsLeft <= 5 ? ` (${item.seatsLeft} ${item.seatsLeft === 1 ? 'seat' : 'seats'} left)` : ''}
+                  {seatNote(item)}
                 </option>
               ))}
             </Field>

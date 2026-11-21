@@ -13,7 +13,7 @@ import { GUIDE_PRICE, money, packages } from '../data/courses.js'
 >
   <Fragment slot="intro">All courses and exams require prepayment in full by Interac e-Transfer. Prices include all applicable taxes.</Fragment>
   <div class="grid gap-5 pt-3 sm:grid-cols-2 lg:grid-cols-4">
-    {packages.map((pkg) => <PackageCard pkg={pkg} detailed />)}
+    {packages.map((pkg) => <PackageCard pkg={pkg} detailed headingLevel={2} />)}
   </div>
   <Notice title={`Canadian Firearms Course Student Guide — ${money(GUIDE_PRICE)} each`} class="mt-8">
     Guides are only available for pickup at one of our class sessions at the Legion Hall. Please <a class="link" href="/contact">contact us</a>

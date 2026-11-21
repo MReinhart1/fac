@@ -26,14 +26,16 @@ function CopyButton({ value, label }) {
   )
 }
 
+// One label and value with a copy button. The <dt> and <dd>s sit directly in the row's <div>, as a description list
+// requires, so screen readers announce them as a pair.
 function Detail({ label, value, copyValue = value, large = false }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-line py-3 last:border-0">
-      <div className="min-w-0">
-        <dt className="text-xs font-semibold text-muted">{label}</dt>
-        <dd className={`font-bold break-all ${large ? 'font-display text-2xl font-extrabold' : 'text-[15px]'}`}>{value}</dd>
-      </div>
-      <CopyButton value={copyValue} label={label.toLowerCase()} />
+    <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-b border-line py-3 last:border-0">
+      <dt className="text-xs font-semibold text-muted">{label}</dt>
+      <dd className={`col-start-1 min-w-0 font-bold break-all ${large ? 'font-display text-2xl font-extrabold' : 'text-[15px]'}`}>{value}</dd>
+      <dd className="col-start-2 row-span-2 row-start-1">
+        <CopyButton value={copyValue} label={label.toLowerCase()} />
+      </dd>
     </div>
   )
 }
@@ -94,11 +96,14 @@ export default function PaymentInstructions({ registration, onRegisterAnother })
           <Step number={1} title="Send this amount to this address">
             <dl className="mt-2 rounded-xl border border-line bg-paper px-4">
               {/* Banks expect a plain number, so copy "237.30" rather than "$237.30". */}
-              <Detail label="Amount" value={amountDue} copyValue={amountDue.replace(/[^\d.]/g, '')} large />
+              <Detail label="Amount" value={amountDue} copyValue={amountDue.replaceAll(/[^\d.]/g, '')} large />
               {etransfer.email ? (
                 <Detail label="Send to" value={etransfer.email} />
               ) : (
-                <div className="py-3 text-sm text-muted">We will email you the e-Transfer address with your registration details.</div>
+                <div className="py-3">
+                  <dt className="text-xs font-semibold text-muted">Send to</dt>
+                  <dd className="text-sm text-muted">We will email you the e-Transfer address with your registration details.</dd>
+                </div>
               )}
             </dl>
           </Step>

@@ -38,7 +38,7 @@ export async function sendEmail({ to, template, subject, html, text, registratio
           html,
           text,
           ...(EMAIL_REPLY_TO ? { reply_to: EMAIL_REPLY_TO } : {}),
-          tags: [{ name: 'template', value: template.replace(/[^a-zA-Z0-9_-]/g, '_') }],
+          tags: [{ name: 'template', value: template.replaceAll(/[^a-zA-Z0-9_-]/g, '_') }],
         }),
         signal: AbortSignal.timeout(8000),
       })

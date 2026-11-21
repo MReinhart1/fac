@@ -1,0 +1,9 @@
+# Security headers for pre-built pages and files, read by Cloudflare. Must match src/lib/security-headers.js
+# (a unit test checks). Pages rendered on demand get the same headers from src/middleware.js.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()

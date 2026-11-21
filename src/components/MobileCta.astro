@@ -3,11 +3,11 @@ import Phone from '@lucide/astro/icons/phone'
 import { phone } from '../data/site.js'
 ---
 
-<div class="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 p-3 backdrop-blur nav:hidden print:hidden">
+<nav class="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 p-3 backdrop-blur nav:hidden print:hidden" aria-label="Call or register">
   <div class="flex gap-2.5">
     <a class="btn btn-outline min-h-11 flex-1 px-3" href={phone.href} aria-label={`Call ${phone.display}`}>
       <Phone size={18} /> Call
     </a>
     <a class="btn min-h-11 flex-[2] px-3" href="/register">Register for a course</a>
   </div>
-</div>
+</nav>
