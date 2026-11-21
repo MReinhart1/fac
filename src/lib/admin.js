@@ -36,10 +36,14 @@ export function messageFor(error) {
   return 'Something went wrong. Please try again.'
 }
 
-/** Dollars typed by staff ("258.30", "$258.30") to cents; null when empty or invalid. */
+/**
+ * Dollars typed by staff to cents; null when empty or unclear. Accepts "258.30", "$258.30", "1,258.30" (comma between
+ * thousands) and "258,30" (French-style decimal comma). Anything else with a comma, like "12,34,56", is refused.
+ */
 export function centsFrom(value) {
-  const clean = String(value ?? '').replace(/[$,\s]/g, '')
-  if (!clean) return null
+  let clean = String(value ?? '').replace(/[$\s]/g, '')
+  if (/^\d{1,3}(,\d{3})+(\.\d{1,2})?$/.test(clean)) clean = clean.replaceAll(',', '')
+  else if (/^\d+,\d{1,2}$/.test(clean)) clean = clean.replace(',', '.')
   if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null
   return Math.round(Number(clean) * 100)
 }

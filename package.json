@@ -11,12 +11,15 @@
     "build": "astro build",
     "preview": "astro preview",
     "lint": "oxlint",
-    "db:setup": "node --env-file=.env scripts/db-setup.mjs",
-    "staff:create": "node --env-file=.env scripts/create-staff.mjs",
-    "deploy": "astro build && wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:server": "node e2e/server.mjs"
+    "test:e2e:server": "node e2e/server.mjs",
+    "db:setup": "node --env-file=.env scripts/db-setup.mjs",
+    "db:seed-test": "node --env-file=.env scripts/seed-test-data.mjs",
+    "staff:create": "node --env-file=.env scripts/create-staff.mjs",
+    "deploy": "astro build && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.9",
@@ -38,6 +41,7 @@
     "@types/react-dom": "^19.3.0",
     "mongodb-memory-server": "^11.3.0",
     "oxlint": "^1.94.0",
+    "vitest": "^5.1.1",
     "wrangler": "^4.165.0"
   }
 }

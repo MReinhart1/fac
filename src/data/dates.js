@@ -6,7 +6,12 @@ export function todayInToronto(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto' }).format(now)
 }
 
-export const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value ?? '') && !Number.isNaN(Date.parse(`${value}T12:00:00Z`))
+// A real calendar date as YYYY-MM-DD. The round trip rejects dates JavaScript would roll over, like 2027-02-30.
+export const isValidDate = (value) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false
+  const date = new Date(`${value}T12:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
 
 // label: "January 16/17, 2027" (or "January 31 / February 1, 2027" across a month boundary)
 // plus short parts for date tiles: month "Jan", days "16–17", year 2027.

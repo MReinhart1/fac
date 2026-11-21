@@ -16,8 +16,10 @@ npm run dev           # http://localhost:4321 (needs .env, see below)
 npm run build         # outputs dist/
 npm run preview       # serve the built site locally
 npm run lint
-npm run test:e2e      # end-to-end tests (see below)
+npm test              # unit tests, a few seconds (see below)
+npm run test:e2e      # end-to-end tests in a browser (see below)
 npm run db:setup      # create database indexes and load the starting course weekends
+npm run db:seed-test  # refill the test database with sample data (see below)
 npm run staff:create  # add a staff login (see below)
 npm run deploy        # build and upload to Cloudflare
 ```
@@ -41,11 +43,31 @@ npm run deploy        # build and upload to Cloudflare
 
 ## Database and staff portal
 
+There are two databases in the same Atlas cluster:
+
+| Database | Used by | Contents |
+| --- | --- | --- |
+| `fac` | The live site (`MONGODB_DB` in `wrangler.jsonc`) | Real students, payments and staff |
+| `fac_test` | `npm run dev` and the scripts on your computer (`MONGODB_DB` in `.env`) | Sample data to try things on |
+
+`npm run db:seed-test` wipes the test database and refills it with sample data, dated relative to today:
+- **Weekends:** two finished weekends with attendance, a nearly full next weekend, a full one, one closed early, one
+  cancelled, and open weekends further out.
+- **Registrations:** about 60, paid by e-Transfer, cash or part payment, with some unpaid, removed, refunded or moved;
+  every package, PAL details, seating requests, consent forms and staff notes.
+- **Also:** contact messages (read and unread) and an email log.
+
+It also creates three test-only logins: `owner@fac.test`, `ian@fac.test` and `ivy@fac.test`, with passwords in
+`scripts/seed-test-data.mjs`. Run it again whenever you want a fresh copy. It refuses to run against `fac`.
+
+To run a script against the live database instead, prefix it, for example
+`MONGODB_DB=fac npm run staff:create -- --email … --name "…"`.
+
 1. Copy `.env.example` to `.env` and fill it in (MongoDB connection string, a generated `BETTER_AUTH_SECRET`,
    `CRON_SECRET`). `npm run dev` and the scripts read it. For the live site, store the same values as Cloudflare
    secrets (see Deploying).
 2. `npm run db:setup` creates the indexes and loads any missing course weekends from `scripts/seed-dates.mjs`.
-   It is safe to run again.
+   It is safe to run again. For the test database, `npm run db:seed-test` does this and adds the sample data.
 3. Create the owner login, then one per instructor. A temporary password is printed once:
 
    ```bash
@@ -90,6 +112,25 @@ exception to the site's Tailwind-only styling). A failed email never blocks a re
 “Failed” in the email log. The two scheduled emails (class reminder and class list) come from an hourly Cloudflare cron
 trigger (`wrangler.jsonc` → `src/worker.js` → `/api/cron/hourly`). It only sends those emails; it never changes
 registrations or seats. Each email is marked in the database before it is sent, so it can never go out twice.
+
+## Unit tests (Vitest)
+
+```bash
+npm test             # run once
+npm run test:watch   # rerun on every save
+```
+
+Unit tests sit next to the code they check, as `*.test.js`, and run in a few seconds. They cover the rules where a
+mistake would cost money or seats, or garble an email:
+
+| File | Covers |
+| --- | --- |
+| `src/data/dates.test.js` | Toronto dates near midnight and across daylight saving, weekend labels, impossible dates |
+| `src/data/courses.test.js` | Package totals and prices, which packages need PAL details |
+| `src/lib/paymentReference.test.js` | Reference format, accented and unusual names, no easily confused characters |
+| `src/lib/admin.test.js` | Reading typed dollar amounts (including "158,30"), redirects, access rules, error messages |
+| `src/lib/email/templates.test.js` | Email wording, class lists, HTML escaping of anything a visitor typed |
+| `src/lib/store.test.js` | Booking rules against an in-memory MongoDB: server-side prices, never overselling, payments, cancelling, moving, claiming each scheduled email once |
 
 ## End-to-end tests (Playwright)
 
