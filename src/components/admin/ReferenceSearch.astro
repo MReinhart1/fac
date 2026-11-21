@@ -1,0 +1,16 @@
+---
+// The payment-reference search box (dashboard and payments page). Searches on /admin/payments.
+interface Props {
+  label: string
+  value?: string
+}
+const { label, value = '' } = Astro.props
+---
+
+<form method="get" action="/admin/payments" class="card mb-6 flex flex-wrap items-end gap-3 p-5">
+  <label class="field-label min-w-60 flex-1">
+    {label}
+    <input class="field font-mono uppercase" name="ref" value={value} placeholder="FAC-0116-SMITH-K7Q" autocomplete="off" />
+  </label>
+  <button class="btn btn-navy" type="submit">Find</button>
+</form>

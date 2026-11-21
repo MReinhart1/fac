@@ -1,10 +1,12 @@
 ---
+import ReferenceSearch from '../../components/admin/ReferenceSearch.astro'
 import StatusPill from '../../components/admin/StatusPill.astro'
 import AdminLayout from '../../layouts/AdminLayout.astro'
 import { money } from '../../data/courses.js'
 import { weekendParts } from '../../data/dates.js'
 import { actorOf, formatDateTime, isOwner, messageFor, readForm, redirectWith } from '../../lib/admin.js'
 import { store } from '../../lib/db.js'
+import { isUnpaid } from '../../lib/status.js'
 import { StoreError } from '../../lib/store.js'
 import { refreshDatePages } from '../../lib/public-sessions.js'
 import { notifyCancelled, notifyPaid, safely } from '../../lib/email/notify.js'
@@ -23,7 +25,7 @@ if (Astro.request.method === 'POST') {
   try {
     const reg = await data.getRegistration(form.id)
     if (form.action === 'remove') {
-      if (reg.status !== 'pending') throw new StoreError('invalid', 'Only unpaid registrations can be removed here. Open the registration instead.')
+      if (!isUnpaid(reg)) throw new StoreError('invalid', 'Only unpaid registrations can be removed here. Open the registration instead.')
       await data.cancelRegistration(form.id, { reason: UNPAID_REASON }, actorOf(user))
       await refreshDatePages(Astro.cache)
       await safely(notifyCancelled(form.id, 0))
@@ -41,18 +43,10 @@ if (Astro.request.method === 'POST') {
 const ref = (Astro.url.searchParams.get('ref') ?? '').trim()
 const found = ref ? await data.findByReference(ref) : null
 const unpaid = await data.listUnpaid()
-const th = 'px-3 py-2.5'
-const td = 'px-3 py-2.5 align-top'
 ---
 
 <AdminLayout title="Payments">
-  <form method="get" class="card mb-6 flex flex-wrap items-end gap-3 p-5">
-    <label class="field-label min-w-60 flex-1">
-      Payment reference from the e-Transfer message
-      <input class="field font-mono uppercase" name="ref" value={ref} placeholder="FAC-0116-SMITH-K7Q" autocomplete="off" />
-    </label>
-    <button class="btn btn-navy" type="submit">Find</button>
-  </form>
+  <ReferenceSearch label="Payment reference from the e-Transfer message" value={ref} />
 
   {
     ref && (
@@ -70,7 +64,7 @@ const td = 'px-3 py-2.5 align-top'
                 {found.reference} · {weekendParts(found.startDate).label} · {found.packageTitle} · {money(found.amountDueCents)}
               </p>
             </div>
-            {found.status === 'pending' ? (
+            {isUnpaid(found) ? (
               <a class="btn" href={`/admin/registrations/${found._id}`}>Record payment</a>
             ) : null}
           </div>
@@ -83,31 +77,31 @@ const td = 'px-3 py-2.5 align-top'
 
   <h2 class="card-heading">Unpaid registrations ({unpaid.length})</h2>
   <div class="card overflow-x-auto">
-    <table class="w-full min-w-[760px] text-left text-sm">
-      <thead class="border-b border-line text-xs tracking-[0.08em] text-muted uppercase">
+    <table class="data-table min-w-[760px]">
+      <thead class="table-head">
         <tr>
-          <th class={th}>Student</th>
-          <th class={th}>Weekend</th>
-          <th class={th}>Reference</th>
-          <th class={th}>Amount</th>
-          <th class={th}>Registered</th>
-          <th class={th}></th>
+          <th class="cell">Student</th>
+          <th class="cell">Weekend</th>
+          <th class="cell">Reference</th>
+          <th class="cell">Amount</th>
+          <th class="cell">Registered</th>
+          <th class="cell"></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-line">
         {
           unpaid.map((reg) => (
             <tr class="hover:bg-paper">
-              <td class={td}>
+              <td class="cell">
                 <a class="link" href={`/admin/registrations/${reg._id}`}>
                   {reg.student.familyName}, {reg.student.firstName}
                 </a>
               </td>
-              <td class={td}>{weekendParts(reg.startDate).label}</td>
-              <td class:list={[td, 'font-mono']}>{reg.reference}</td>
-              <td class={td}>{money(reg.amountDueCents)}</td>
-              <td class={td}>{formatDateTime(reg.createdAt)}</td>
-              <td class={td}>
+              <td class="cell">{weekendParts(reg.startDate).label}</td>
+              <td class="cell font-mono">{reg.reference}</td>
+              <td class="cell">{money(reg.amountDueCents)}</td>
+              <td class="cell">{formatDateTime(reg.createdAt)}</td>
+              <td class="cell">
                 <div class="flex gap-2">
                   <form method="post">
                     <input type="hidden" name="id" value={reg._id.toString()} />

@@ -2,7 +2,7 @@
 import AdminLayout from '../../../layouts/AdminLayout.astro'
 import { isSaturday, isValidDate } from '../../../data/dates.js'
 import { booking } from '../../../data/site.js'
-import { actorOf, isOwner, messageFor, readForm, redirectWith } from '../../../lib/admin.js'
+import { actorOf, isOwner, messageFor, readForm, redirectWith, weekendStatus } from '../../../lib/admin.js'
 import { store } from '../../../lib/db.js'
 import { refreshDatePages } from '../../../lib/public-sessions.js'
 
@@ -68,7 +68,7 @@ const weekends = await store().listSessions({ includePast: showPast, instructorI
           <a class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-paper" href={`/admin/sessions/${w.id}`}>
             <span class="font-semibold">{w.label}</span>
             <span class="text-sm text-muted">
-              {w.seatsTaken} / {w.capacity} seats · <span class="capitalize">{w.full && w.status === 'open' ? 'full' : w.status}</span>
+              {w.seatsTaken} / {w.capacity} seats · <span class="capitalize">{weekendStatus(w)}</span>
             </span>
           </a>
         </li>

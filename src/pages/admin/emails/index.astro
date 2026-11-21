@@ -54,20 +54,20 @@ const statusLabel = { sent: 'Sent', skipped: 'Not sent', failed: 'Failed' }
 
   <h2 class="card-heading">Recent emails</h2>
   <div class="card overflow-x-auto">
-    <table class="w-full min-w-[640px] text-left text-sm">
-      <thead class="border-b border-line text-xs tracking-[0.08em] text-muted uppercase">
-        <tr><th class="px-3 py-2.5">When</th><th class="px-3 py-2.5">To</th><th class="px-3 py-2.5">Subject</th><th class="px-3 py-2.5">Status</th></tr>
+    <table class="data-table min-w-[640px]">
+      <thead class="table-head">
+        <tr><th class="cell">When</th><th class="cell">To</th><th class="cell">Subject</th><th class="cell">Status</th></tr>
       </thead>
       <tbody class="divide-y divide-line">
         {
           emails.map((e) => (
             <tr>
-              <td class="px-3 py-2.5 whitespace-nowrap">{formatDateTime(e.at)}</td>
-              <td class="px-3 py-2.5">{e.to.join(', ') || '—'}</td>
-              <td class="px-3 py-2.5">
+              <td class="cell whitespace-nowrap">{formatDateTime(e.at)}</td>
+              <td class="cell">{e.to.join(', ') || '—'}</td>
+              <td class="cell">
                 {e.registrationId ? <a class="link" href={`/admin/registrations/${e.registrationId}`}>{e.subject}</a> : e.subject}
               </td>
-              <td class="px-3 py-2.5">
+              <td class="cell">
                 <span class:list={['pill', tone[e.status]]} title={e.error ?? ''}>{statusLabel[e.status] ?? e.status}</span>
               </td>
             </tr>

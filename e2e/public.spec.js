@@ -26,7 +26,9 @@ test('a weekend that fills up shows as Full', async ({ page, weekends, register 
 
 test('main navigation reaches every section', async ({ page }) => {
   await page.goto('/')
-  const nav = page.locator('#main-nav')
+  const nav = page.getByRole('navigation', { name: 'Main navigation' })
+  // On a phone the links sit behind the Menu button.
+  const menu = page.getByRole('button', { name: 'Menu' })
   for (const [label, path] of [
     ['Dates', '/dates'],
     ['Pricing', '/pricing'],
@@ -35,6 +37,7 @@ test('main navigation reaches every section', async ({ page }) => {
     ['FAQ', '/faq'],
     ['Contact', '/contact'],
   ]) {
+    if (await menu.isVisible()) await menu.click()
     await nav.getByRole('link', { name: label, exact: true }).click()
     await expect(page).toHaveURL(path)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
@@ -59,4 +62,15 @@ test('unknown pages return the 404 page', async ({ page }) => {
   const response = await page.goto('/no-such-page')
   expect(response.status()).toBe(404)
   await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
+})
+
+test('the privacy policy is linked from the footer and both forms', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('contentinfo').getByRole('link', { name: 'Privacy policy' }).click()
+  await expect(page).toHaveURL('/privacy')
+  await expect(page.getByRole('heading', { name: 'Privacy policy', level: 1 })).toBeVisible()
+  for (const path of ['/register', '/contact']) {
+    await page.goto(path)
+    await expect(page.getByRole('link', { name: 'privacy policy', exact: true })).toHaveAttribute('href', '/privacy')
+  }
 })

@@ -1,7 +1,8 @@
 // Sends one email through Resend's REST API and records it in the email log, sent or not.
 // Never throws: a failed email must not break a registration or a staff action.
 import { EMAIL_FROM, EMAIL_REPLY_TO, RESEND_API_KEY, RESEND_API_URL } from 'astro:env/server'
-import { collections } from '../db.js'
+import { db } from '../db.js'
+import { COLLECTIONS } from '../mongo.js'
 
 /**
  * @param {{ to: string | string[], template: string, subject: string, html: string, text: string,
@@ -55,7 +56,7 @@ export async function sendEmail({ to, template, subject, html, text, registratio
 
   if (status !== 'sent') console.warn(`[email] ${template} to ${recipients.join(', ') || '(none)'}: ${status} — ${error}`)
   try {
-    await collections().emailLog.insertOne({ ...entry, status, providerId, error })
+    await db().collection(COLLECTIONS.emailLog).insertOne({ ...entry, status, providerId, error })
   } catch (logError) {
     console.error('[email] could not write the email log', logError)
   }

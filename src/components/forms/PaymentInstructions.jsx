@@ -38,6 +38,19 @@ function Detail({ label, value, copyValue = value, large = false }) {
   )
 }
 
+/** One numbered step of the payment instructions. */
+function Step({ number, title, children }) {
+  return (
+    <li className="grid grid-cols-[auto_1fr] gap-3.5">
+      <span className="grid size-7 place-items-center rounded-full bg-cream text-sm font-bold text-red">{number}</span>
+      <div>
+        <p className="font-semibold">{title}</p>
+        {children}
+      </div>
+    </li>
+  )
+}
+
 /** Shown in place of the registration form once it has been sent. */
 export default function PaymentInstructions({ registration, onRegisterAnother }) {
   const headingRef = useRef(null)
@@ -78,43 +91,31 @@ export default function PaymentInstructions({ registration, onRegisterAnother })
         <h3 className="font-display text-xl font-bold">Send your payment from your bank</h3>
 
         <ol className="mt-5 grid gap-5">
-          <li className="grid grid-cols-[auto_1fr] gap-3.5">
-            <span className="grid size-7 place-items-center rounded-full bg-cream text-sm font-bold text-red">1</span>
-            <div>
-              <p className="font-semibold">Send this amount to this address</p>
-              <dl className="mt-2 rounded-xl border border-line bg-paper px-4">
-                {/* Banks expect a plain number, so copy "237.30" rather than "$237.30". */}
-                <Detail label="Amount" value={amountDue} copyValue={amountDue.replace(/[^\d.]/g, '')} large />
-                {etransfer.email ? (
-                  <Detail label="Send to" value={etransfer.email} />
-                ) : (
-                  <div className="py-3 text-sm text-muted">We will email you the e-Transfer address with your registration details.</div>
-                )}
-              </dl>
-            </div>
-          </li>
-          <li className="grid grid-cols-[auto_1fr] gap-3.5">
-            <span className="grid size-7 place-items-center rounded-full bg-cream text-sm font-bold text-red">2</span>
-            <div>
-              <p className="font-semibold">Put this reference in the e-Transfer message</p>
-              <dl className="mt-2 rounded-xl border border-line bg-paper px-4">
-                <Detail label="Reference" value={reference} />
-              </dl>
-              <p className="small-note">
-                If your bank asks for a security question, use “Registration reference” as the question and your reference code as the answer.
-              </p>
-            </div>
-          </li>
-          <li className="grid grid-cols-[auto_1fr] gap-3.5">
-            <span className="grid size-7 place-items-center rounded-full bg-cream text-sm font-bold text-red">3</span>
-            <div>
-              <p className="font-semibold">Watch for your confirmation</p>
-              <p className="body-text text-sm">
-                Once your payment arrives, we will email your course confirmation to <strong className="text-navy">{email}</strong>. It takes about
-                one business day. If you have not heard from us within 2 business days, call {phone.display}.
-              </p>
-            </div>
-          </li>
+          <Step number={1} title="Send this amount to this address">
+            <dl className="mt-2 rounded-xl border border-line bg-paper px-4">
+              {/* Banks expect a plain number, so copy "237.30" rather than "$237.30". */}
+              <Detail label="Amount" value={amountDue} copyValue={amountDue.replace(/[^\d.]/g, '')} large />
+              {etransfer.email ? (
+                <Detail label="Send to" value={etransfer.email} />
+              ) : (
+                <div className="py-3 text-sm text-muted">We will email you the e-Transfer address with your registration details.</div>
+              )}
+            </dl>
+          </Step>
+          <Step number={2} title="Put this reference in the e-Transfer message">
+            <dl className="mt-2 rounded-xl border border-line bg-paper px-4">
+              <Detail label="Reference" value={reference} />
+            </dl>
+            <p className="small-note">
+              If your bank asks for a security question, use “Registration reference” as the question and your reference code as the answer.
+            </p>
+          </Step>
+          <Step number={3} title="Watch for your confirmation">
+            <p className="body-text text-sm">
+              Once your payment arrives, we will email your course confirmation to <strong className="text-navy">{email}</strong>. It takes about
+              one business day. If you have not heard from us within 2 business days, call {phone.display}.
+            </p>
+          </Step>
         </ol>
 
         <p className="small-note mt-6 border-t border-line pt-4">

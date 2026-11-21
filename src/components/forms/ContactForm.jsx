@@ -11,6 +11,13 @@ export default function ContactForm() {
       <Field label="Email" name="email" type="email" required autoComplete="email" />
       <Field label="Comments" as="textarea" name="comments" rows={6} required />
       <Honeypot />
+      <p className="small-note mt-0">
+        We use your details only to reply. See our{' '}
+        <a className="link" href="/privacy">
+          privacy policy
+        </a>
+        .
+      </p>
       <SubmitButton status={status} label="Send message" />
       <FormStatus status={status} />
     </form>

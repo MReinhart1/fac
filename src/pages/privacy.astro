@@ -1,0 +1,138 @@
+---
+// Privacy policy. Describes what the site actually collects and who it goes to; keep it in step with the code.
+// The owner's own answers (how long records are kept, who to contact) live in `privacy` in src/data/site.js.
+// This is a plain-language draft based on PIPEDA, not legal advice.
+import Notice from '../components/Notice.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { location, phone, privacy, site } from '../data/site.js'
+
+const missing = !privacy.keepRecordsFor || !privacy.contactName || !privacy.contactEmail
+const updated = new Date(`${privacy.lastUpdated}T12:00:00Z`).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })
+const tbc = 'rounded bg-cream px-1.5 font-semibold text-maroon'
+const h2 = 'section-title mt-10 mb-3 text-[26px]'
+---
+
+<BaseLayout
+  title="Privacy Policy"
+  description="How Firearms Academy Canada collects, uses and protects your personal information."
+  eyebrow="Privacy"
+  heading="Privacy policy"
+>
+  <Fragment slot="intro">What we collect when you register or contact us, why, who sees it, and your choices.</Fragment>
+
+  <article class="body-text max-w-[760px]">
+    {
+      missing && (
+        <Notice title="Draft">
+          This policy is not final. Parts marked “to be confirmed” are waiting for answers from {site.name}.
+        </Notice>
+      )
+    }
+
+    <p class="mt-6">
+      {site.name} (“we”) teaches the Canadian Firearms Safety Course (CFSC) and the Canadian Restricted Firearms Safety Course (CRFSC) at{' '}
+      {location.name}, {location.address}. We are responsible for the personal information we collect, and we handle it according to
+      Canada’s Personal Information Protection and Electronic Documents Act (PIPEDA). Last updated {updated}.
+    </p>
+
+    <h2 class={h2}>What we collect</h2>
+    <ul class="grid list-disc gap-2 pl-5">
+      <li>
+        <b>When you register:</b> your name and nickname, phone numbers, email address, the course and weekend you choose, whether you already
+        have the student guide, a friend you would like to sit with, any comments, and whether you want to move to an earlier class if a space
+        opens. For restricted-only courses, we also ask when you completed the non-restricted (PAL) course and who taught it.
+      </li>
+      <li>
+        <b>About your payment:</b> the amount, how you paid, the date, and your payment reference. We never see your bank or card details:
+        Interac e-Transfers are sent through your own bank.
+      </li>
+      <li>
+        <b>On course day:</b> whether a signed under-18 consent form was received, whether you attended, and short notes from your instructor.
+        The consent form itself stays on paper with us.
+      </li>
+      <li><b>When you contact us:</b> your name, email address and message.</li>
+      <li>
+        <b>When you visit the website:</b> like any website, our hosting provider handles your IP address and browser details to deliver the
+        pages and protect the site from abuse. Public pages set no cookies and use no analytics or advertising trackers. Only staff who sign in
+        to our booking system get a sign-in cookie.
+      </li>
+    </ul>
+    <p class="mt-3">We do not ask for your date of birth, your licence (PAL) number, or copies of ID.</p>
+
+    <h2 class={h2}>How we use it</h2>
+    <ul class="grid list-disc gap-2 pl-5">
+      <li>To book your seat, match your payment to your registration, and confirm your place.</li>
+      <li>
+        To email you about your booking: the payment details after you register, your course confirmation, a reminder before the course,
+        and any change or cancellation.
+      </li>
+      <li>To prepare the class list and run the course.</li>
+      <li>To answer your questions.</li>
+    </ul>
+    <p class="mt-3">
+      We do not sell your information, and we do not send newsletters or promotional emails. If that ever changes, we will ask you first.
+    </p>
+
+    <h2 class={h2}>Who sees it</h2>
+    <ul class="grid list-disc gap-2 pl-5">
+      <li><b>Our owner</b> sees all registrations and payments.</li>
+      <li>
+        <b>Your instructors</b> see the class list for the weekends they teach: your name, contact details, course, payment status (paid or
+        not, without amounts) and course-day notes.
+      </li>
+      <li>
+        <b>Service providers</b> that run the website for us and may only use your information for that purpose:{' '}
+        <a class="link" href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noreferrer">Cloudflare</a> (website hosting),{' '}
+        <a class="link" href="https://www.mongodb.com/legal/privacy/privacy-policy" target="_blank" rel="noreferrer">MongoDB Atlas</a>{' '}
+        (where registrations are stored), and{' '}
+        <a class="link" href="https://resend.com/legal/privacy-policy" target="_blank" rel="noreferrer">Resend</a> (sends our emails).
+      </li>
+      <li>
+        <b>Google</b> provides the website’s fonts and the map on our <a class="link" href="/locations">location page</a>; loading them
+        sends your IP address to Google.
+      </li>
+      <li>Anyone the law requires us to share it with.</li>
+    </ul>
+    <p class="mt-3">
+      These providers may store or process information outside Canada, including in the United States, where it may be accessible to
+      authorities under the laws of that country.
+    </p>
+
+    <h2 class={h2}>How long we keep it</h2>
+    <p>
+      We keep registration records for {privacy.keepRecordsFor || <span class={tbc}>to be confirmed</span>} after your course, then delete
+      them. Contact-form messages are kept for the same period. Email records kept by our email provider are deleted on its own schedule.
+    </p>
+
+    <h2 class={h2}>How we protect it</h2>
+    <p>
+      Only our staff can open the booking system, each with their own password, and instructors see only their own classes. Every change to a
+      registration is recorded with who made it. Information travels over encrypted (HTTPS) connections, and our database provider encrypts
+      the stored data. If a breach ever creates a real risk of significant harm, we will tell you and the Privacy Commissioner of Canada, as
+      the law requires.
+    </p>
+
+    <h2 class={h2}>Students under 18</h2>
+    <p>
+      Students under 18 may take the course with a signed parent or guardian <a class="link" href="/consent">consent form</a>. We record only
+      that the form was received.
+    </p>
+
+    <h2 class={h2}>Your choices</h2>
+    <p>
+      You can ask to see the information we hold about you, ask us to correct it, or withdraw your consent. If you withdraw consent before
+      your course, we may not be able to keep your registration. We will answer within 30 days.
+    </p>
+
+    <h2 class={h2}>Contact us</h2>
+    <p>
+      For privacy questions or requests, contact {privacy.contactName || <span class={tbc}>name to be confirmed</span>} at{' '}
+      {privacy.contactEmail ? <a class="link" href={`mailto:${privacy.contactEmail}`}>{privacy.contactEmail}</a> : <span class={tbc}>email to be confirmed</span>},
+      or call <a class="link" href={phone.href}>{phone.display}</a>.
+    </p>
+    <p class="mt-3">
+      If you are not satisfied with our answer, you can complain to the{' '}
+      <a class="link" href="https://www.priv.gc.ca/en/report-a-concern/" target="_blank" rel="noreferrer">Office of the Privacy Commissioner of Canada</a>.
+    </p>
+  </article>
+</BaseLayout>

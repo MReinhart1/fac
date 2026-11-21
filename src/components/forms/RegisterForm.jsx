@@ -163,7 +163,13 @@ export default function RegisterForm({ sessions = [], unavailable = false }) {
           <div className="mt-4">
             <Field label="Comments" as="textarea" className="resize-y" name="comments" rows={3} />
           </div>
-          <p className="small-note">Your course confirmation will be emailed to this address, so make sure it is valid.</p>
+          <p className="small-note">
+            Your course confirmation will be emailed to this address, so make sure it is valid. See our{' '}
+            <a className="link" href="/privacy">
+              privacy policy
+            </a>{' '}
+            for how we use your details.
+          </p>
           <Honeypot />
         </Section>
 

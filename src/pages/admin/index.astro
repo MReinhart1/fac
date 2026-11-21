@@ -1,7 +1,9 @@
 ---
+import ReferenceSearch from '../../components/admin/ReferenceSearch.astro'
 import AdminLayout from '../../layouts/AdminLayout.astro'
 import { money } from '../../data/courses.js'
-import { isOwner } from '../../lib/admin.js'
+import { isOwner, weekendStatus } from '../../lib/admin.js'
+import { SESSION_STATUS } from '../../lib/status.js'
 import { store } from '../../lib/db.js'
 
 export const prerender = false
@@ -12,7 +14,7 @@ const data = store()
 
 const weekends = await data.listSessions({ instructorId: owner ? undefined : user.id })
 const counts = await data.rosterCounts(weekends.map((w) => w.id))
-const next = weekends.find((w) => w.status !== 'cancelled')
+const next = weekends.find((w) => w.status !== SESSION_STATUS.cancelled)
 const nextCounts = next ? (counts[next.id] ?? { pending: 0, paid: 0, outstandingCents: 0 }) : null
 const unpaid = owner ? await data.listUnpaid() : []
 const unread = owner ? await data.countUnreadMessages() : 0
@@ -26,13 +28,7 @@ const statLabel = 'text-sm text-muted'
 <AdminLayout title="Dashboard">
   {
     owner && (
-      <form method="get" action="/admin/payments" class="card mb-6 flex flex-wrap items-end gap-3 p-5">
-        <label class="field-label min-w-60 flex-1">
-          Find a payment reference
-          <input class="field font-mono uppercase" name="ref" placeholder="FAC-0116-SMITH-K7Q" autocomplete="off" />
-        </label>
-        <button class="btn btn-navy" type="submit">Find</button>
-      </form>
+      <ReferenceSearch label="Find a payment reference" />
     )
   }
 
@@ -43,7 +39,7 @@ const statLabel = 'text-sm text-muted'
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <a class:list={[stat, 'hover:border-navy']} href={`/admin/sessions/${next.id}`}>
             <p class={statValue}>{next.label}</p>
-            <p class={statLabel}>{next.status === 'open' ? 'Open for registration' : 'Closed to new registrations'} · view class list</p>
+            <p class={statLabel}>{next.status === SESSION_STATUS.open ? 'Open for registration' : 'Closed to new registrations'} · view class list</p>
           </a>
           <div class={stat}>
             <p class={statValue}>
@@ -88,31 +84,31 @@ const statLabel = 'text-sm text-muted'
   <section>
     <h2 class="card-heading">Upcoming course weekends</h2>
     <div class="card overflow-x-auto">
-      <table class="w-full min-w-[560px] text-left text-sm">
-        <thead class="border-b border-line text-xs tracking-[0.08em] text-muted uppercase">
+      <table class="data-table min-w-[560px]">
+        <thead class="table-head">
           <tr>
-            <th class="px-4 py-3">Weekend</th>
-            <th class="px-4 py-3">Seats</th>
-            <th class="px-4 py-3">Paid</th>
-            <th class="px-4 py-3">Unpaid</th>
-            <th class="px-4 py-3">Status</th>
+            <th class="cell">Weekend</th>
+            <th class="cell">Seats</th>
+            <th class="cell">Paid</th>
+            <th class="cell">Unpaid</th>
+            <th class="cell">Status</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-line">
           {
             weekends.map((w) => (
               <tr class="hover:bg-paper">
-                <td class="px-4 py-3 font-semibold">
+                <td class="cell font-semibold">
                   <a class="link" href={`/admin/sessions/${w.id}`}>
                     {w.label}
                   </a>
                 </td>
-                <td class="px-4 py-3">
+                <td class="cell">
                   {w.seatsTaken} / {w.capacity}
                 </td>
-                <td class="px-4 py-3">{counts[w.id]?.paid ?? 0}</td>
-                <td class="px-4 py-3">{counts[w.id]?.pending ?? 0}</td>
-                <td class="px-4 py-3 capitalize">{w.full && w.status === 'open' ? 'full' : w.status}</td>
+                <td class="cell">{counts[w.id]?.paid ?? 0}</td>
+                <td class="cell">{counts[w.id]?.pending ?? 0}</td>
+                <td class="cell capitalize">{weekendStatus(w)}</td>
               </tr>
             ))
           }

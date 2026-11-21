@@ -2,10 +2,11 @@
 import StatusPill from '../../../components/admin/StatusPill.astro'
 import AdminLayout from '../../../layouts/AdminLayout.astro'
 import { money } from '../../../data/courses.js'
-import { actorOf, canSee, isOwner, listStaff, messageFor, readForm, redirectWith, roleLabel } from '../../../lib/admin.js'
+import { actorOf, canSee, isOwner, listStaff, messageFor, nullIfNotFound, redirectWith, roleLabel } from '../../../lib/admin.js'
 import { getAuth } from '../../../lib/auth.js'
 import { store } from '../../../lib/db.js'
 import { refreshDatePages } from '../../../lib/public-sessions.js'
+import { holdsSeat, isUnpaid, SESSION_STATUS } from '../../../lib/status.js'
 import { StoreError } from '../../../lib/store.js'
 
 export const prerender = false
@@ -16,13 +17,8 @@ const id = Astro.params.id ?? ''
 const here = `/admin/sessions/${id}`
 const data = store()
 
-let weekend
-try {
-  weekend = await data.getSession(id)
-} catch (error) {
-  if (error instanceof StoreError && error.code === 'not_found') return new Response('Course weekend not found.', { status: 404 })
-  throw error
-}
+const weekend = await data.getSession(id).catch(nullIfNotFound)
+if (!weekend) return new Response('Course weekend not found.', { status: 404 })
 if (!canSee(user, weekend)) return new Response('You are not assigned to this weekend.', { status: 403 })
 
 if (Astro.request.method === 'POST') {
@@ -32,7 +28,7 @@ if (Astro.request.method === 'POST') {
   const status = String(form.get('status') ?? '')
   try {
     if (!Number.isInteger(capacity) || capacity < 1 || capacity > 200) throw new StoreError('invalid', 'Seats must be a whole number between 1 and 200.')
-    if (!['open', 'closed', 'cancelled'].includes(status)) throw new StoreError('invalid', 'Choose a status.')
+    if (!Object.values(SESSION_STATUS).includes(status)) throw new StoreError('invalid', 'Choose a status.')
     await data.updateSession(
       id,
       {
@@ -51,13 +47,11 @@ if (Astro.request.method === 'POST') {
 }
 
 const roster = await data.listRoster(id)
-const active = roster.filter((reg) => reg.status === 'pending' || reg.status === 'paid')
+const active = roster.filter(holdsSeat)
 const inactive = roster.filter((reg) => !active.includes(reg))
 const staff = owner ? await listStaff(getAuth(), Astro.request.headers) : []
-const outstanding = active.filter((reg) => reg.status === 'pending').reduce((sum, reg) => sum + reg.amountDueCents, 0)
+const outstanding = active.filter(isUnpaid).reduce((sum, reg) => sum + reg.amountDueCents, 0)
 
-const th = 'px-3 py-2.5'
-const td = 'px-3 py-2.5 align-top'
 ---
 
 <AdminLayout title={weekend.label}>
@@ -78,9 +72,9 @@ const td = 'px-3 py-2.5 align-top'
           <label class="field-label">
             Status
             <select class="field" name="status">
-              <option value="open" selected={weekend.status === 'open'}>Open for registration</option>
-              <option value="closed" selected={weekend.status === 'closed'}>Closed (shows as Full)</option>
-              <option value="cancelled" selected={weekend.status === 'cancelled'}>Cancelled (hidden from the site)</option>
+              <option value={SESSION_STATUS.open} selected={weekend.status === SESSION_STATUS.open}>Open for registration</option>
+              <option value={SESSION_STATUS.closed} selected={weekend.status === SESSION_STATUS.closed}>Closed (shows as Full)</option>
+              <option value={SESSION_STATUS.cancelled} selected={weekend.status === SESSION_STATUS.cancelled}>Cancelled (hidden from the site)</option>
             </select>
           </label>
           <fieldset class="sm:col-span-2">
@@ -114,23 +108,23 @@ const td = 'px-3 py-2.5 align-top'
     <button class="btn btn-outline min-h-10 print:hidden" type="button" data-print>Print sign-in sheet</button>
   </div>
   <div class="card overflow-x-auto print:border-0">
-    <table class="w-full min-w-[720px] text-left text-sm">
-      <thead class="border-b border-line text-xs tracking-[0.08em] text-muted uppercase">
+    <table class="data-table min-w-[720px]">
+      <thead class="table-head">
         <tr>
-          <th class={th}>Student</th>
-          <th class={th}>Package</th>
-          <th class={th}>Payment</th>
-          <th class={th}>Guide</th>
-          <th class={th}>Sit with</th>
-          <th class={th}>Consent form</th>
-          <th class:list={[th, 'hidden print:table-cell']}>Signature</th>
+          <th class="cell">Student</th>
+          <th class="cell">Package</th>
+          <th class="cell">Payment</th>
+          <th class="cell">Guide</th>
+          <th class="cell">Sit with</th>
+          <th class="cell">Consent form</th>
+          <th class="cell hidden print:table-cell">Signature</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-line">
         {
           active.map((reg) => (
             <tr class="hover:bg-paper">
-              <td class={td}>
+              <td class="cell">
                 <a class="link print:no-underline print:text-navy" href={`/admin/registrations/${reg._id}`}>
                   {reg.student.familyName}, {reg.student.firstName}
                 </a>
@@ -139,15 +133,15 @@ const td = 'px-3 py-2.5 align-top'
                   {reg.student.phone} · {reg.student.email}
                 </div>
               </td>
-              <td class={td}>{reg.packageTitle}</td>
-              <td class={td}>
+              <td class="cell">{reg.packageTitle}</td>
+              <td class="cell">
                 <StatusPill status={reg.status} />
                 {owner && <div class="mt-1 text-xs text-muted">{money(reg.amountDueCents)} · {reg.reference}</div>}
               </td>
-              <td class={td}>{reg.hasGuide ? 'Has own' : 'Needs guide'}</td>
-              <td class={td}>{reg.friendName || '—'}</td>
-              <td class={td}>{reg.consentReceived ? 'Received' : '—'}</td>
-              <td class:list={[td, 'hidden w-48 print:table-cell']} />
+              <td class="cell">{reg.hasGuide ? 'Has own' : 'Needs guide'}</td>
+              <td class="cell">{reg.friendName || '—'}</td>
+              <td class="cell">{reg.consentReceived ? 'Received' : '—'}</td>
+              <td class="cell hidden w-48 print:table-cell" />
             </tr>
           ))
         }

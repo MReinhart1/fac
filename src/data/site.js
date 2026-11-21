@@ -51,6 +51,18 @@ export const booking = {
   defaultCapacity: 20,
 }
 
+// Privacy policy (/privacy). TODO before launch: the owner fills in the two missing answers.
+// While either is empty, the page shows "to be confirmed" in its place and a draft notice at the top.
+export const privacy = {
+  // How long student records are kept after the course, as it should read in a sentence, e.g. '2 years'.
+  keepRecordsFor: '',
+  // Who answers privacy questions and requests: a name or role, and an email address.
+  contactName: '',
+  contactEmail: '',
+  // Change this date whenever the policy changes.
+  lastUpdated: '2026-11-20',
+}
+
 export const FSESO_URL = 'http://www.fseso.org/'
 
 export const isExternal = (url) => /^https?:\/\//.test(url)

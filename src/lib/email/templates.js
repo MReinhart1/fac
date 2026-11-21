@@ -3,6 +3,7 @@
 import { money } from '../../data/courses.js'
 import { weekendParts } from '../../data/dates.js'
 import { booking, cfp, etransfer, location, phone } from '../../data/site.js'
+import { holdsSeat, isUnpaid } from '../status.js'
 import { renderEmail } from './layout.js'
 
 const dateLabel = (startDate) => weekendParts(startDate).label
@@ -171,10 +172,10 @@ export function ownerNewMessage(message, { siteUrl }) {
 }
 
 export function instructorRoster(weekend, roster, { siteUrl }) {
-  const active = roster.filter((reg) => reg.status === 'paid' || reg.status === 'pending')
+  const active = roster.filter(holdsSeat)
   const line = (reg) =>
     `${reg.student.familyName}, ${reg.student.firstName} — ${reg.packageTitle}` +
-    `${reg.status === 'pending' ? ' (not paid yet)' : ''}${reg.hasGuide ? '' : ' · needs guide'}${reg.friendName ? ` · sit with ${reg.friendName}` : ''}`
+    `${isUnpaid(reg) ? ' (not paid yet)' : ''}${reg.hasGuide ? '' : ' · needs guide'}${reg.friendName ? ` · sit with ${reg.friendName}` : ''}`
   return renderEmail({
     subject: `Class list for ${weekend.label}: ${active.length} student${active.length === 1 ? '' : 's'}`,
     preheader: `${active.length} registered for ${weekend.label}.`,

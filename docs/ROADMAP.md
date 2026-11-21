@@ -55,18 +55,21 @@ moving the domain. Card payments and the extras listed under "Later" come after 
 - [x] **First staff login** created with `npm run staff:create`.
 - [x] **Atlas network access.** The deployed Worker reaches Atlas (Cloudflare Workers have no fixed IP addresses, so
   Atlas must keep allowing them; the database user's strong password is the protection).
-- [ ] **Email.** Create a Resend account and add `firearmsacademy.ca` as a domain. Add the DNS records Resend gives you
-  (SPF and DKIM), plus a DMARC record; this can be done at the current DNS host before the move. Then set
-  `RESEND_API_KEY`, `EMAIL_FROM` and `OWNER_NOTIFY_EMAIL`.
+- [ ] **Email.** Partly done: the Resend account exists, and its key, sender and owner address are stored in Cloudflare.
+  Until firearmsacademy.ca is verified, the site sends from Resend's test sender (`onboarding@resend.dev`), which only
+  delivers to the Resend account owner, so owner notices arrive but emails to students fail. Still to do: add
+  `firearmsacademy.ca` in Resend (Domains), add its DNS records (SPF and DKIM) plus a DMARC record, then change
+  `EMAIL_FROM` to an address on the domain, set `EMAIL_REPLY_TO` to a real inbox, and update both in Cloudflare.
 - [x] **Hosting.** Deployed with `npm run deploy` (November 20, 2026); the database, login and hourly-job secrets are
   stored in Cloudflare. Still to do: confirm the account is on Workers Paid (US$5/month), and add the Resend secrets.
-- [ ] **Version control.** The project is not in Git yet. Initialize it and push to a private GitHub repository before
-  deploying.
+- [x] **Version control.** In a private GitHub repository: https://github.com/MReinhart1/fac.
 - [ ] **Booking rules.** The owner confirms seats per class (20 now) and how soon students are asked to pay (48 hours now).
 - [ ] **Content check.** The owner reads every page, especially the home-page copy, prices, policy and hunter-education
   contacts.
 - [ ] **Photos and logo.** Real classroom photos and the FAC logo replace the text badge.
-- [ ] **Privacy policy page.** Required before collecting names, phone numbers and emails (see Privacy below). Not built.
+- [ ] **Privacy policy page.** Drafted at `/privacy` and linked from the footer and both forms. Until the owner fills in
+  `privacy` in `src/data/site.js` (how long records are kept, and a name and email for privacy questions), the page shows
+  "to be confirmed" in those places and a draft notice at the top. Worth a quick legal read before launch.
 - [ ] **Domain cutover.** Point firearmsacademy.ca at the Worker without breaking the business email (see below).
 
 Nice before launch, not blocking: check the old external links on the Links page, and test every email once Resend is set
@@ -191,7 +194,7 @@ businesses in Ontario. This is a starting checklist, not legal advice.
 
 - **Collect only what is used.** The form asks for name, contact details, course choice, and (for restricted-only
   packages) the PAL course date and instructor. No date of birth, PAL number or ID scans.
-- **Privacy policy page** (not built): what is collected, why, who sees it (owner, instructors, and the email, hosting
+- **Privacy policy page** (drafted at `/privacy`, waiting for the owner's answers): what is collected, why, who sees it (owner, instructors, and the email, hosting
   and database providers), how long it is kept, and who to contact.
 - **Minors.** The portal records only whether a signed consent form was received; the paper form stays with the owner.
 - **Access.** Staff logins only, invite-only, and instructors see only their own classes. Every change is written to the

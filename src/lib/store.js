@@ -11,6 +11,7 @@ import { todayInToronto, weekendParts } from '../data/dates.js'
 import { booking } from '../data/site.js'
 import { COLLECTIONS } from './mongo.js'
 import { makePaymentReference } from './paymentReference.js'
+import { holdsSeat, REGISTRATION_STATUS, SESSION_STATUS } from './status.js'
 
 export class StoreError extends Error {
   constructor(code, message) {
@@ -19,9 +20,7 @@ export class StoreError extends Error {
   }
 }
 
-export const REGISTRATION_STATUS = { pending: 'pending', paid: 'paid', cancelled: 'cancelled' }
 const HOLDS_A_SEAT = [REGISTRATION_STATUS.pending, REGISTRATION_STATUS.paid]
-export const SESSION_STATUS = { open: 'open', closed: 'closed', cancelled: 'cancelled' }
 
 export const toObjectId = (id) => {
   if (id instanceof ObjectId) return id
@@ -98,6 +97,13 @@ export function createStore(db, client) {
     const doc = await registrations.findOne({ _id: toObjectId(id) })
     if (!doc) throw new StoreError('not_found', 'Registration not found.')
     return doc
+  }
+
+  // Update a registration only if its status is still what the page loaded, so two staff members
+  // working on the same student cannot overwrite each other.
+  const updateUnchanged = async (reg, update, session) => {
+    const result = await registrations.updateOne({ _id: reg._id, status: reg.status }, update, { session })
+    if (result.modifiedCount !== 1) throw new StoreError('conflict', 'This registration changed while you were working. Reload and try again.')
   }
 
   return {
@@ -235,9 +241,7 @@ export function createStore(db, client) {
       throw new StoreError('error', 'Could not create a payment reference. Please try again.')
     },
 
-    async getRegistration(id) {
-      return getRegistration(id)
-    },
+    getRegistration,
 
     async listRoster(courseSessionId) {
       return registrations
@@ -269,11 +273,7 @@ export function createStore(db, client) {
         recordedBy: { id: actor.id, name: actor.name },
         note,
       }
-      const result = await registrations.updateOne(
-        { _id: reg._id, status: REGISTRATION_STATUS.pending },
-        { $set: { status: REGISTRATION_STATUS.paid, paidAt: new Date(), updatedAt: new Date() }, $push: { payments: payment } },
-      )
-      if (result.modifiedCount !== 1) throw new StoreError('conflict', 'This registration changed while you were working. Reload and try again.')
+      await updateUnchanged(reg, { $set: { status: REGISTRATION_STATUS.paid, paidAt: new Date(), updatedAt: new Date() }, $push: { payments: payment } })
       await audit(actor, 'registration.paid', { type: 'registration', id }, { reference: reg.reference, method, amountCents: payment.amountCents })
     },
 
@@ -284,16 +284,15 @@ export function createStore(db, client) {
         ? { payments: { kind: 'refund', method: 'refund', amountCents: refundCents, receivedAt: new Date(), recordedBy: { id: actor.id, name: actor.name }, note: reason } }
         : undefined
       await transaction(async (session) => {
-        const result = await registrations.updateOne(
-          { _id: reg._id, status: reg.status },
+        await updateUnchanged(
+          reg,
           {
             $set: { status: REGISTRATION_STATUS.cancelled, cancelledAt: new Date(), cancelReason: reason, updatedAt: new Date() },
             ...(push ? { $push: push } : {}),
           },
-          { session },
+          session,
         )
-        if (result.modifiedCount !== 1) throw new StoreError('conflict', 'This registration changed while you were working. Reload and try again.')
-        if (HOLDS_A_SEAT.includes(reg.status)) await giveBackSeat(reg.courseSessionId, session)
+        if (holdsSeat(reg)) await giveBackSeat(reg.courseSessionId, session)
       })
       await audit(actor, 'registration.cancel', { type: 'registration', id }, { reference: reg.reference, refundCents, reason })
     },
@@ -303,22 +302,21 @@ export function createStore(db, client) {
       const reg = await getRegistration(id)
       const target = toObjectId(newSessionId)
       if (target.equals(reg.courseSessionId)) throw new StoreError('invalid', 'The student is already booked on that weekend.')
-      if (!HOLDS_A_SEAT.includes(reg.status)) throw new StoreError('invalid', 'Only pending or paid registrations can be moved.')
+      if (!holdsSeat(reg)) throw new StoreError('invalid', 'Only unpaid or paid registrations can be moved.')
       const weekend = await sessions.findOne({ _id: target })
       if (!weekend) throw new StoreError('not_found', 'Course weekend not found.')
       await transaction(async (session) => {
         const seat = await takeSeat(target, session)
         if (!seat) throw new StoreError('full', 'That weekend is full, closed or already past.')
         await giveBackSeat(reg.courseSessionId, session)
-        const result = await registrations.updateOne(
-          { _id: reg._id, status: reg.status },
+        await updateUnchanged(
+          reg,
           {
             $set: { courseSessionId: target, startDate: weekend.startDate, updatedAt: new Date() },
             $push: { moves: { from: reg.startDate, to: weekend.startDate, at: new Date(), by: { id: actor.id, name: actor.name } } },
           },
-          { session },
+          session,
         )
-        if (result.modifiedCount !== 1) throw new StoreError('conflict', 'This registration changed while you were working. Reload and try again.')
       })
       await audit(actor, 'registration.move', { type: 'registration', id }, { reference: reg.reference, from: reg.startDate, to: weekend.startDate })
     },

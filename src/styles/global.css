@@ -110,3 +110,14 @@
 @utility pill-full {
   @apply bg-danger-soft text-danger-ink;
 }
+
+/* Staff portal tables: <table class="data-table"><thead class="table-head">…<th class="cell">…<td class="cell"> */
+@utility data-table {
+  @apply w-full text-left text-sm;
+}
+@utility table-head {
+  @apply border-b border-line text-xs tracking-[0.08em] text-muted uppercase;
+}
+@utility cell {
+  @apply px-3 py-2.5 align-top;
+}

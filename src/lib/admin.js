@@ -20,6 +20,15 @@ export const redirectWith = (redirect, path, message, kind = 'ok') => {
   return redirect(url.pathname + url.search, 303)
 }
 
+/** For `.catch()` when loading a record: "not found" becomes null so the page can answer 404; other errors still throw. */
+export function nullIfNotFound(error) {
+  if (error instanceof StoreError && error.code === 'not_found') return null
+  throw error
+}
+
+/** A course weekend's status as staff see it: an open weekend with no seats left shows as "full". */
+export const weekendStatus = (weekend) => (weekend.full && weekend.status === 'open' ? 'full' : weekend.status)
+
 /** A message the person can act on, or a generic one for unexpected errors (which are logged). */
 export function messageFor(error) {
   if (error instanceof StoreError) return error.message

@@ -31,6 +31,7 @@ npm run deploy        # build and upload to Cloudflare
 | Course weekends, registrations, payments, messages | MongoDB Atlas (database `fac`), managed in the staff portal at `/admin` |
 | Database rules (seat counting, payments, cancellations) | `src/lib/store.js` |
 | Staff login | `src/lib/auth-config.js` (Better Auth; owner = `admin` role, instructor = `user` role) |
+| Privacy policy settings (how long records are kept, privacy contact) | `privacy` in `src/data/site.js` (page: `src/pages/privacy.astro`) |
 | FAQ | `src/data/faqs.js` |
 | External links page | `src/data/links.js` |
 | Colours ([Coolors palette](https://coolors.co/palette/780000-c1121f-fdf0d5-003049-669bbc)), fonts, shared classes (`btn`, `card`, `field`, `link`…) | `src/styles/global.css` |
@@ -106,14 +107,16 @@ The tests never touch the real database or send real email. `npm run test:e2e` s
 
 It also creates two test-only staff logins, listed in `e2e/env.js`. Before each test, `e2e/fixtures.js` resets the
 database to four known course weekends and empties the fake inbox. Because the tests share one database, they run one at
-a time (about a minute, including the build).
+a time. Every test runs at desktop size, and the public pages and forms run again at phone size (about a minute in all,
+including the build).
 
 To keep the test server running between runs, start it in one terminal with `npm run test:e2e:server`; the tests reuse it.
-Set `E2E_SKIP_BUILD=1` to skip the build when only tests changed.
+Set `E2E_SKIP_BUILD=1` to skip the build when only tests changed. After rebuilding the site, restart the test server:
+it cannot pick up a new build while running.
 
 | File | Covers |
 | --- | --- |
-| `e2e/public.spec.js` | Home and dates pages read live weekends; Full labels; navigation; old `.php` redirects; 404 |
+| `e2e/public.spec.js` | Home and dates pages read live weekends; Full labels; navigation (and the phone menu); old `.php` redirects; 404; privacy policy links |
 | `e2e/registration.spec.js` | Registering, payment instructions, emails, guide discount, PAL details, full and closed weekends, the race for the last seat, spam trap |
 | `e2e/contact.spec.js` | Contact form to owner email and the portal's messages |
 | `e2e/admin-access.spec.js` | Sign in and out, safe redirects, no caching, owner vs instructor access |
