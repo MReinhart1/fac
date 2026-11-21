@@ -87,3 +87,17 @@ test('search engines are asked not to list the demo site', async ({ page, reques
     await expect(page.locator('meta[name="robots"]'), path).toHaveAttribute('content', 'noindex, nofollow')
   }
 })
+
+test('pages and API responses carry the security headers', async ({ request }) => {
+  // Pre-built (/faq), on-demand (/dates, /admin/login) and an API reply all get them.
+  for (const path of ['/faq', '/dates', '/admin/login']) {
+    const headers = (await request.get(path)).headers()
+    expect(headers['x-frame-options'], path).toBe('DENY')
+    expect(headers['x-content-type-options'], path).toBe('nosniff')
+    expect(headers['strict-transport-security'], path).toContain('max-age=')
+    expect(headers['referrer-policy'], path).toBe('strict-origin-when-cross-origin')
+    expect(headers['content-security-policy'], path).toContain("frame-ancestors 'none'")
+  }
+  const api = await request.post('/api/contact', { data: {} })
+  expect(api.headers()['x-content-type-options']).toBe('nosniff')
+})

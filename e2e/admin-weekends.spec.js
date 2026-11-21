@@ -106,8 +106,8 @@ test('cancelling a paid registration records the refund and frees the seat', asy
   const reg = await db.collection('registrations').findOne({})
   expect(reg.status).toBe('cancelled')
   expect(reg.payments.map((p) => [p.kind, p.amountCents])).toEqual([
-    ['payment', 25830],
-    ['refund', 15830],
+    ['payment', 25_830],
+    ['refund', 15_830],
   ])
   expect((await db.collection('courseSessions').findOne({ startDate: weekends.open.startDate })).seatsTaken).toBe(0)
 })

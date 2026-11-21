@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+/* Fonts are served from this site (no Google Fonts request): Archivo for headings, DM Sans (with optical sizes) for text. */
+@import '@fontsource-variable/archivo';
+@import '@fontsource-variable/dm-sans/opsz.css';
 
 /*
  * Palette: https://coolors.co/palette/780000-c1121f-fdf0d5-003049-669bbc
@@ -6,8 +9,8 @@
  * steel on navy 4.6. Steel on white is only 3.0, so steel is never used for text on light backgrounds.
  */
 @theme {
-  --font-sans: 'DM Sans', system-ui, sans-serif;
-  --font-display: 'Archivo', 'DM Sans', system-ui, sans-serif;
+  --font-sans: 'DM Sans Variable', system-ui, sans-serif;
+  --font-display: 'Archivo Variable', 'DM Sans Variable', system-ui, sans-serif;
 
   /* Palette */
   --color-maroon: #780000;

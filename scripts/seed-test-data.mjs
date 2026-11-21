@@ -94,7 +94,8 @@ function addRegistration(weekend, options = {}) {
   const pkg = findPackage(packageId)
   const amountDueCents = pkg.total - (hasGuide ? GUIDE_PRICE : 0)
   const createdAt = at(-registeredDaysAgo, 9 + (registrations.length % 10))
-  const email = `${firstName}.${familyName}`.toLowerCase().normalize('NFD').replace(/[^a-z.]/g, '') + '@example.test'
+  const localPart = `${firstName}.${familyName}`.toLowerCase().normalize('NFD').replaceAll(/[^a-z.]/g, '')
+  const email = `${localPart}@example.test`
   const doc = {
     _id: new ObjectId(),
     reference: makePaymentReference(familyName, weekend.startDate),
@@ -150,7 +151,7 @@ function buildData(staff) {
   const pastA = addWeekend({ startDate: saturdayIn(-42), capacity: 20, instructorIds: [ian], createdDaysAgo: 120 })
   repeat(11, (i) => addRegistration(pastA, { packageId: i % 3 ? 'package' : 'cfsc', paid: 'e-Transfer', attendance: 'attended', registeredDaysAgo: 70 - i, hasGuide: i === 4 }))
   addRegistration(pastA, { paid: 'e-Transfer', attendance: 'no_show', registeredDaysAgo: 60, staffNotes: 'No call, no show. Fee forfeited per policy.' })
-  addRegistration(pastA, { packageId: 'package', paid: 'e-Transfer', cancelled: { reason: 'Cancelled 3 weeks before', refundCents: 35040 }, registeredDaysAgo: 80 })
+  addRegistration(pastA, { packageId: 'package', paid: 'e-Transfer', cancelled: { reason: 'Cancelled 3 weeks before', refundCents: 35_040 }, registeredDaysAgo: 80 })
 
   const pastB = addWeekend({ startDate: saturdayIn(-14), capacity: 16, instructorIds: [ian, ivy], createdDaysAgo: 90 })
   repeat(13, (i) => addRegistration(pastB, { packageId: ['package', 'cfsc', 'crfsc'][i % 3], paid: i === 5 ? 'Cash' : 'e-Transfer', attendance: i === 9 ? 'no_show' : 'attended', registeredDaysAgo: 40 - i, consentReceived: i === 2 }))
@@ -158,7 +159,7 @@ function buildData(staff) {
   // The next weekend: nearly full, a few still unpaid, one removed for not paying.
   const nextUp = addWeekend({ startDate: saturdayIn(4), capacity: 12, instructorIds: [ian], notes: 'Projector bulb replaced. Bring spare extension cord.' })
   repeat(7, (i) => addRegistration(nextUp, { packageId: i % 2 ? 'package' : 'cfsc', paid: 'e-Transfer', registeredDaysAgo: 30 - i * 2, hasGuide: i === 1, consentReceived: i === 3, nickname: i === 0 ? 'Bill' : '' }))
-  addRegistration(nextUp, { paid: { method: 'Cash', amountCents: 20000, note: 'Paid $200 at the office; owes the rest on course day' }, registeredDaysAgo: 12 })
+  addRegistration(nextUp, { paid: { method: 'Cash', amountCents: 20_000, note: 'Paid $200 at the office; owes the rest on course day' }, registeredDaysAgo: 12 })
   addRegistration(nextUp, { packageId: 'package', registeredDaysAgo: 6, comments: 'Will send the e-Transfer on payday.' })
   addRegistration(nextUp, { registeredDaysAgo: 2, friendName: 'Mateo Garcia' })
   addRegistration(nextUp, { packageId: 'module', registeredDaysAgo: 1 })

@@ -9,7 +9,7 @@ const reg = (overrides = {}) => ({
   startDate: '2027-01-16',
   packageId: 'cfsc',
   packageTitle: 'CFSC course package',
-  amountDueCents: 25830,
+  amountDueCents: 25_830,
   hasGuide: false,
   status: 'pending',
   student: { firstName: 'Pat', familyName: 'Smith', nickname: '', email: 'pat@example.test', phone: '416-555-0100', phoneExt: '' },
@@ -37,7 +37,7 @@ describe('registration received', () => {
 
 describe('registration cancelled', () => {
   it('mentions a refund only when one was given', () => {
-    expect(t.registrationCancelled(reg(), { refundCents: 15830 }).text).toContain('A refund of $158.30 is on its way.')
+    expect(t.registrationCancelled(reg(), { refundCents: 15_830 }).text).toContain('A refund of $158.30 is on its way.')
     expect(t.registrationCancelled(reg(), { refundCents: 0 }).text).not.toContain('refund')
   })
 

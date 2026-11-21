@@ -47,8 +47,8 @@ export function FormStatus({ status }) {
   const tone = status.state === 'sent' ? 'bg-success-soft text-success-ink' : 'bg-danger-soft text-danger-ink'
 
   return (
-    <p className={`mt-3.5 rounded-lg px-4 py-3 text-sm leading-normal ${tone}`} role="status">
+    <output className={`mt-3.5 block rounded-lg px-4 py-3 text-sm leading-normal ${tone}`}>
       {status.message}
-    </p>
+    </output>
   )
 }

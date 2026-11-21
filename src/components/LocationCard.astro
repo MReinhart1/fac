@@ -5,9 +5,12 @@ import { location } from '../data/site.js'
 
 interface Props {
   mapClass?: string
+  /** Heading level for the location name, so the page's headings never skip a level (3 under a section heading). */
+  headingLevel?: 2 | 3
 }
 
-const { mapClass = 'h-64' } = Astro.props
+const { mapClass = 'h-64', headingLevel = 3 } = Astro.props
+const Heading = `h${headingLevel}`
 const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(location.address)}`
 ---
 
@@ -22,7 +25,7 @@ const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${enco
     <div class="flex gap-3.5">
       <span class="icon-chip"><MapPin size={20} /></span>
       <div>
-        <h3 class="font-display text-lg font-bold">{location.name} ({location.area})</h3>
+        <Heading class="font-display text-lg font-bold">{location.name} ({location.area})</Heading>
         <p class="body-text">{location.address}</p>
         <a class="link mt-1 inline-block text-sm" href={directionsUrl} target="_blank" rel="noreferrer">Get directions</a>
       </div>

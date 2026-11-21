@@ -38,6 +38,6 @@ describe('money', () => {
   it('formats cents as Canadian dollars', () => {
     expect(money(0)).toBe('$0.00')
     expect(money(2100)).toBe('$21.00')
-    expect(money(123456)).toBe('$1,234.56')
+    expect(money(123_456)).toBe('$1,234.56')
   })
 })

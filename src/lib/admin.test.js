@@ -6,17 +6,17 @@ import { StoreError } from './store.js'
 
 describe('centsFrom', () => {
   it.each([
-    ['258.30', 25830],
-    ['258.3', 25830],
-    ['$258.30', 25830],
-    ['1,258.30', 125830],
-    [' 200 ', 20000],
+    ['258.30', 25_830],
+    ['258.3', 25_830],
+    ['$258.30', 25_830],
+    ['1,258.30', 125_830],
+    [' 200 ', 20_000],
     ['19.99', 1999],
     ['0', 0],
-    ['1,250', 125000],
+    ['1,250', 125_000],
     // A French-style decimal comma is a decimal point, not a thousands separator.
-    ['258,30', 25830],
-    ['158,3', 15830],
+    ['258,30', 25_830],
+    ['158,3', 15_830],
   ])('reads %j as %i cents', (typed, cents) => expect(centsFrom(typed)).toBe(cents))
 
   it.each(['', null, undefined, 'abc', '12.345', '-5', '1.2.3', '12,34,56', '1,25.00', ',50'])('refuses %j', (typed) => expect(centsFrom(typed)).toBeNull())

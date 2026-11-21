@@ -76,7 +76,7 @@ const unpaid = await data.listUnpaid()
   }
 
   <h2 class="card-heading">Unpaid registrations ({unpaid.length})</h2>
-  <div class="card overflow-x-auto">
+  <div class="card overflow-x-auto" tabindex="0" role="region" aria-label="Unpaid registrations table">
     <table class="data-table min-w-[760px]">
       <thead class="table-head">
         <tr>
@@ -85,7 +85,7 @@ const unpaid = await data.listUnpaid()
           <th class="cell">Reference</th>
           <th class="cell">Amount</th>
           <th class="cell">Registered</th>
-          <th class="cell"></th>
+          <th class="cell"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-line">
@@ -145,6 +145,8 @@ const unpaid = await data.listUnpaid()
   // Ask before removing a student.
   for (const form of document.querySelectorAll('form[data-confirm]')) {
     form.addEventListener('submit', (event) => {
+      // A native confirm is the simplest accessible guard for this staff-only destructive action.
+      // oxlint-disable-next-line no-alert
       if (!window.confirm(form.dataset.confirm)) event.preventDefault()
     })
   }

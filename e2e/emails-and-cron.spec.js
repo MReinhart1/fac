@@ -35,7 +35,7 @@ test('the hourly job only sends reminders and never touches seats', async ({ req
   await register(weekends.open)
   const response = await request.get('/api/cron/hourly', { headers: { Authorization: `Bearer ${E2E.cronSecret}` } })
   expect(response.status()).toBe(200)
-  expect(Object.keys(await response.json()).sort()).toEqual(['classReminders', 'rosters'])
+  expect(Object.keys(await response.json()).toSorted()).toEqual(['classReminders', 'rosters'])
   expect((await db.collection('registrations').findOne({})).status).toBe('pending')
   expect((await db.collection('courseSessions').findOne({ startDate: weekends.open.startDate })).seatsTaken).toBe(1)
 })

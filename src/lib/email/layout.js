@@ -7,7 +7,7 @@ const C = { navy: '#003049', red: '#c1121f', cream: '#fdf0d5', paper: '#fef8ee',
 const FONT = "'DM Sans', Helvetica, Arial, sans-serif"
 
 const escape = (value) =>
-  String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch])
+  String(value ?? '').replaceAll(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch])
 
 /**
  * Blocks: { h: 'Heading' } · { p: 'Paragraph' } · { note: 'Highlighted paragraph' } · { details: [[label, value], ...] }
@@ -44,9 +44,9 @@ function blockHtml(block) {
 function blockText(block) {
   if (block.h) return `\n${block.h.toUpperCase()}\n`
   if (block.p || block.small || block.note) return `${block.p ?? block.small ?? block.note}\n`
-  if (block.list) return block.list.map((item) => `- ${item}`).join('\n') + '\n'
+  if (block.list) return `${block.list.map((item) => `- ${item}`).join('\n')}\n`
   if (block.details) {
-    return block.details.filter(([, value]) => value !== undefined && value !== null && value !== '').map(([label, value]) => `${label}: ${value}`).join('\n') + '\n'
+    return `${block.details.filter(([, value]) => value !== undefined && value !== null && value !== '').map(([label, value]) => `${label}: ${value}`).join('\n')}\n`
   }
   if (block.button) return `${block.button.label}: ${block.button.url}\n`
   return ''
@@ -65,6 +65,6 @@ export function renderEmail({ subject, preheader = '', blocks }) {
 <tr><td style="padding:28px">${blocks.map(blockHtml).join('\n')}</td></tr>
 <tr><td style="padding:18px 28px;border-top:1px solid ${C.line};font:400 12px/1.5 ${FONT};color:${C.muted}">${escape(footer)}</td></tr>
 </table></td></tr></table></body></html>`
-  const text = `${blocks.map(blockText).join('\n').replace(/\n{3,}/g, '\n\n').trim()}\n\n--\n${footer}\n`
+  const text = `${blocks.map(blockText).join('\n').replaceAll(/\n{3,}/g, '\n\n').trim()}\n\n--\n${footer}\n`
   return { subject, html, text }
 }

@@ -52,18 +52,18 @@ describe('registering', () => {
     const w = await weekend()
     const reply = await register(w)
     expect(reply).toMatchObject({ amountDue: '$258.30', course: 'CFSC course package', payWithinHours: 48 })
-    expect(await store.getRegistration(reply.id)).toMatchObject({ status: 'pending', amountDueCents: 25830, payments: [] })
+    expect(await store.getRegistration(reply.id)).toMatchObject({ status: 'pending', amountDueCents: 25_830, payments: [] })
     expect(await seatsTaken(w)).toBe(1)
   })
 
   it('takes the guide off the price when the student has one', async () => {
     const reply = await register(await weekend(), { hasGuide: true })
-    expect((await store.getRegistration(reply.id)).amountDueCents).toBe(23730)
+    expect((await store.getRegistration(reply.id)).amountDueCents).toBe(23_730)
   })
 
   it('ignores a price or status sent from the browser', async () => {
     const reply = await register(await weekend(), { amountDueCents: 1, status: 'paid' })
-    expect(await store.getRegistration(reply.id)).toMatchObject({ amountDueCents: 25830, status: 'pending' })
+    expect(await store.getRegistration(reply.id)).toMatchObject({ amountDueCents: 25_830, status: 'pending' })
   })
 
   it('keeps PAL details only for restricted-only packages', async () => {
@@ -102,10 +102,10 @@ describe('registering', () => {
 describe('payments', () => {
   it('records a payment and confirms the seat', async () => {
     const { id } = await register(await weekend())
-    await store.markPaid(id, { method: 'Cash', amountCents: 20000, note: 'At the door' }, owner)
+    await store.markPaid(id, { method: 'Cash', amountCents: 20_000, note: 'At the door' }, owner)
     const reg = await store.getRegistration(id)
     expect(reg.status).toBe('paid')
-    expect(reg.payments).toEqual([expect.objectContaining({ kind: 'payment', method: 'Cash', amountCents: 20000, note: 'At the door' })])
+    expect(reg.payments).toEqual([expect.objectContaining({ kind: 'payment', method: 'Cash', amountCents: 20_000, note: 'At the door' })])
   })
 
   it('refuses to record a payment twice or on a cancelled registration', async () => {
@@ -159,10 +159,10 @@ describe('cancelling', () => {
     const w = await weekend()
     const { id } = await register(w)
     await store.markPaid(id, {}, owner)
-    await store.cancelRegistration(id, { refundCents: 15830, reason: 'Asked to cancel' }, owner)
+    await store.cancelRegistration(id, { refundCents: 15_830, reason: 'Asked to cancel' }, owner)
     expect((await store.getRegistration(id)).payments.map((p) => [p.kind, p.amountCents])).toEqual([
-      ['payment', 25830],
-      ['refund', 15830],
+      ['payment', 25_830],
+      ['refund', 15_830],
     ])
     expect(await seatsTaken(w)).toBe(0)
   })
@@ -231,7 +231,7 @@ describe('course weekends', () => {
     await weekend({ status: 'cancelled' })
     await weekend({ daysAhead: -14 })
     const closed = await weekend({ status: 'closed' })
-    expect((await store.listPublicSessions()).map((w) => w.id).sort()).toEqual([open, closed].sort())
+    expect((await store.listPublicSessions()).map((w) => w.id).toSorted()).toEqual([open, closed].toSorted())
   })
 
   it('shows instructors only the weekends they teach', async () => {
@@ -248,7 +248,7 @@ describe('course weekends', () => {
     await store.markPaid(paid.id, {}, owner)
     const gone = await register(w)
     await store.cancelRegistration(gone.id, {}, owner)
-    expect(await store.rosterCounts([w])).toEqual({ [w]: expect.objectContaining({ pending: 1, paid: 1, outstandingCents: 25830 }) })
+    expect(await store.rosterCounts([w])).toEqual({ [w]: expect.objectContaining({ pending: 1, paid: 1, outstandingCents: 25_830 }) })
   })
 })
 
@@ -272,7 +272,7 @@ describe('scheduled emails', () => {
 describe('audit log', () => {
   it('records who made each change', async () => {
     const { id } = await register(await weekend())
-    await store.markPaid(id, { amountCents: 25830 }, owner)
+    await store.markPaid(id, { amountCents: 25_830 }, owner)
     const entry = await db.collection('auditLog').findOne({ action: 'registration.paid' })
     expect(entry).toMatchObject({ actor: { id: 'owner-1', name: 'Olive Owner' }, target: { type: 'registration', id } })
   })

@@ -26,7 +26,7 @@ test('"Mark paid" records the payment and emails the confirmation', async ({ pag
   await expect(page.getByRole('heading', { name: 'Unpaid registrations (0)' })).toBeVisible()
   const reg = await db.collection('registrations').findOne({ reference })
   expect(reg.status).toBe('paid')
-  expect(reg.payments).toEqual([expect.objectContaining({ kind: 'payment', method: 'e-Transfer', amountCents: 25830 })])
+  expect(reg.payments).toEqual([expect.objectContaining({ kind: 'payment', method: 'e-Transfer', amountCents: 25_830 })])
   const confirmation = (await emails()).find((email) => email.subject.startsWith("You're confirmed"))
   expect(confirmation.to).toEqual(['pat@example.test'])
 })
@@ -92,6 +92,6 @@ test('a cash payment of a different amount is recorded without an email', async 
 
   await expect(page.getByRole('status')).toHaveText('Payment recorded.')
   const reg = await db.collection('registrations').findOne({})
-  expect(reg.payments).toEqual([expect.objectContaining({ method: 'Cash', amountCents: 20000, note: 'Paid at the door' })])
+  expect(reg.payments).toEqual([expect.objectContaining({ method: 'Cash', amountCents: 20_000, note: 'Paid at the door' })])
   expect((await emails()).filter((email) => email.subject.startsWith("You're confirmed"))).toHaveLength(0)
 })

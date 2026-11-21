@@ -33,7 +33,7 @@ export const previews = (siteUrl) => {
     'payment-confirmed': { label: 'Course confirmation after payment (student)', email: t.paymentConfirmed({ ...reg, status: 'paid' }, { siteUrl }) },
     'class-reminder': { label: 'Class reminder, 3 days before (student)', email: t.classReminder({ ...reg, status: 'paid' }) },
     'registration-moved': { label: 'Moved to another weekend (student)', email: t.registrationMoved(reg, { fromStartDate: addDaysTo(reg.startDate, -28) }) },
-    'registration-cancelled': { label: 'Cancelled (student)', email: t.registrationCancelled(reg, { refundCents: 35040 }) },
+    'registration-cancelled': { label: 'Cancelled (student)', email: t.registrationCancelled(reg, { refundCents: 35_040 }) },
     'registration-removed-unpaid': { label: 'Removed for not paying (student)', email: t.registrationCancelled({ ...reg, cancelReason: t.UNPAID_REASON }, {}) },
     'owner-new-registration': { label: 'New registration (owner)', email: t.ownerNewRegistration(reg, { siteUrl }) },
     'owner-new-message': { label: 'New contact message (owner)', email: t.ownerNewMessage({ name: 'Jordan Sample', email: 'jordan@example.com', comments: 'Do you have space in March?' }, { siteUrl }) },

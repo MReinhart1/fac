@@ -14,9 +14,12 @@ interface Props {
   }
   /** Show the course + guide breakdown (pricing page). */
   detailed?: boolean
+  /** Heading level for the package name, so the page's headings never skip a level (3 under a section heading). */
+  headingLevel?: 2 | 3
 }
 
-const { pkg, detailed = false } = Astro.props
+const { pkg, detailed = false, headingLevel = 3 } = Astro.props
+const Heading = `h${headingLevel}`
 const featured = pkg.id === 'package'
 const soft = featured ? 'text-cream/75' : 'text-muted'
 const line = featured ? 'border-cream/15' : 'border-line'
@@ -30,7 +33,7 @@ const line = featured ? 'border-cream/15' : 'border-line'
 >
   {featured && <span class="absolute -top-3 left-6 rounded-full bg-red px-3 py-1 text-xs font-bold text-white">Both courses</span>}
   <p class:list={['text-xs font-bold tracking-[0.12em] uppercase', featured ? 'text-steel' : 'text-red']}>{pkg.covers}</p>
-  <h3 class="mt-2 font-display text-lg leading-snug font-bold">{pkg.title}</h3>
+  <Heading class="mt-2 font-display text-lg leading-snug font-bold">{pkg.title}</Heading>
   <p class="mt-4 flex items-baseline gap-1.5">
     <span class="font-display text-[34px] leading-none font-extrabold tracking-[-0.02em]">{money(pkg.total)}</span>
   </p>

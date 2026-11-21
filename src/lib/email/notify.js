@@ -62,6 +62,9 @@ export async function runHourlyJob({ now = new Date() } = {}) {
   if (torontoHour(now) < 9) return summary
 
   const today = todayInToronto(now)
+  // Emails go out one at a time on purpose: each is claimed before it is sent, and sequential sends
+  // stay under the email provider's rate limit.
+  /* oxlint-disable no-await-in-loop */
   for (const reg of await data.listClassRemindersDue(addDaysTo(today, 3))) {
     if (await data.claimOnce('registration', reg._id, 'classReminderSentAt')) {
       await toStudent(reg, 'class-reminder', t.classReminder(reg))
@@ -76,5 +79,6 @@ export async function runHourlyJob({ now = new Date() } = {}) {
       summary.rosters += 1
     }
   }
+  /* oxlint-enable no-await-in-loop */
   return summary
 }

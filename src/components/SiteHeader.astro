@@ -20,7 +20,7 @@ const path = cleanPath(Astro.url.pathname)
 const isCurrent = (href: string) => href === path
 ---
 
-<div class="bg-navy text-[13px] text-cream/90 print:hidden">
+<aside class="bg-navy text-[13px] text-cream/90 print:hidden" aria-label="Contact details">
   <div class="page-width flex min-h-10 items-center justify-between gap-4">
     <p class="flex items-center gap-2 max-nav:hidden">
       <ShieldCheck size={15} class="text-steel" /> FSESO-certified, CFO-designated instructors
@@ -34,7 +34,7 @@ const isCurrent = (href: string) => href === path
       {phone.display}
     </a>
   </div>
-</div>
+</aside>
 
 <header class="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur print:hidden">
   <div class="page-width relative flex h-18 items-center justify-between gap-6">

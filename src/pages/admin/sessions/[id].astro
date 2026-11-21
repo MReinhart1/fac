@@ -107,7 +107,7 @@ const outstanding = active.filter(isUnpaid).reduce((sum, reg) => sum + reg.amoun
     <h2 class="card-heading mb-0">Class list ({active.length})</h2>
     <button class="btn btn-outline min-h-10 print:hidden" type="button" data-print>Print sign-in sheet</button>
   </div>
-  <div class="card overflow-x-auto print:border-0">
+  <div class="card overflow-x-auto print:border-0" tabindex="0" role="region" aria-label="Class list table">
     <table class="data-table min-w-[720px]">
       <thead class="table-head">
         <tr>

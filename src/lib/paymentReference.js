@@ -7,7 +7,7 @@ export function makePaymentReference(familyName = '', courseStart = '') {
   const name =
     familyName
       .normalize('NFD')
-      .replace(/[^A-Za-z]/g, '')
+      .replaceAll(/[^A-Za-z]/g, '')
       .toUpperCase()
       .slice(0, 6) || 'STUDENT'
   const mmdd = /^\d{4}-\d{2}-\d{2}$/.test(courseStart) ? courseStart.slice(5).replace('-', '') : '0000'

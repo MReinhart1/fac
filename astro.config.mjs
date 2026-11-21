@@ -54,8 +54,29 @@ export default defineConfig({
       OWNER_NOTIFY_EMAIL: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },
-  // Reject cross-site form posts to server-rendered pages (staff portal actions).
-  security: { checkOrigin: true },
+  // No Markdown code blocks on this site; Shiki's inline styles would clash with the Content-Security-Policy below.
+  markdown: { syntaxHighlight: false },
+  security: {
+    // Reject cross-site form posts to server-rendered pages (staff portal actions).
+    checkOrigin: true,
+    // Content-Security-Policy on every page: only this site's own scripts and styles run (Astro adds hashes for its
+    // inline ones), fonts come from this site, and the only outside content is the Google map on /locations.
+    // Framing, plugins and other headers are in src/lib/security-headers.js.
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "connect-src 'self'",
+        'frame-src https://www.google.com',
+        "form-action 'self'",
+        "base-uri 'self'",
+        "object-src 'none'",
+      ],
+      scriptDirective: { resources: ["'self'"] },
+      styleDirective: { resources: ["'self'"] },
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
     // In the Worker, use the runtime's own URL classes instead of the `whatwg-url` package. Its punycode
