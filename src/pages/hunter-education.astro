@@ -1,0 +1,80 @@
+---
+import Check from '@lucide/astro/icons/check'
+import Globe from '@lucide/astro/icons/globe'
+import MapPin from '@lucide/astro/icons/map-pin'
+import BaseLayout from '../layouts/BaseLayout.astro'
+
+const topics = [
+  'Ecosystems and wildlife management',
+  'Hunting laws and regulations',
+  'Hunter responsibilities',
+  'Identification, biology, management of and hunting techniques for big game, small game and waterfowl',
+  'Hunting and survival equipment',
+  "The hunter's role in society",
+]
+---
+
+<BaseLayout
+  title="Ontario Hunter Education Program"
+  description="Where to take the Ontario Hunter Education Program (OHEP) online or in person near Toronto, and what it covers."
+  eyebrow="Hunter education"
+  heading="Ontario Hunter Education Program"
+>
+  <Fragment slot="intro">
+    All new hunters must take hunter education training and pass an exam before they can purchase their first hunting licence. The Ontario
+    Hunter Education Program (OHEP) will help you understand the natural world and become a knowledgeable and responsible hunter.
+  </Fragment>
+
+  <div class="grid items-start gap-6 nav:grid-cols-2">
+    <article class="card p-6 nav:p-8">
+      <h2 class="card-heading">Prerequisites</h2>
+      <div class="mt-3 grid gap-3">
+        <p class="rounded-lg bg-paper p-4 body-text">
+          <strong class="text-navy">H1 (hunting with a firearm):</strong> valid PAL or successful completion of the CFSC and exam. <a class="link" href="/register?course=cfsc">Take the CFSC with us</a>.
+        </p>
+        <p class="rounded-lg bg-paper p-4 body-text"><strong class="text-navy">H2 (hunting with archery equipment only):</strong> none.</p>
+      </div>
+      <h2 class="card-heading mt-8">The program covers</h2>
+      <ul class="mt-3 grid gap-2.5">
+        {
+          topics.map((topic) => (
+            <li class="flex gap-2.5 body-text">
+              <Check size={18} class="mt-1 shrink-0 text-red" />
+              {topic}
+            </li>
+          ))
+        }
+      </ul>
+    </article>
+
+    <div class="grid gap-4">
+      <article class="card flex gap-4 p-6">
+        <span class="icon-chip"><Globe size={20} /></span>
+        <div>
+          <h2 class="card-heading">Online course</h2>
+          <p class="body-text">
+            Register at <a class="link" href="https://www.huntercourse.com/canada/ontario/" target="_blank" rel="noreferrer">Ontario Hunter Education</a>.
+          </p>
+        </div>
+      </article>
+      <article class="card flex gap-4 p-6">
+        <span class="icon-chip"><MapPin size={20} /></span>
+        <div>
+          <h2 class="card-heading">In-person course (Markham)</h2>
+          <p class="body-text">
+            Call or text <a class="link" href="tel:+14168172317">416.817.2317</a> or use the <a class="link" href="https://forms.gle/PDJZx6pxeqCu11Tn8" target="_blank" rel="noreferrer">Big Nick Outdoors form</a>.
+          </p>
+        </div>
+      </article>
+      <article class="card flex gap-4 p-6">
+        <span class="icon-chip"><MapPin size={20} /></span>
+        <div>
+          <h2 class="card-heading">Stouffville &amp; York</h2>
+          <p class="body-text">
+            Saverio Zupo: call <a class="link" href="tel:+14372265888">437-226-5888</a> or email <a class="link" href="mailto:szupo@rogers.com">szupo@rogers.com</a>.
+          </p>
+        </div>
+      </article>
+    </div>
+  </div>
+</BaseLayout>

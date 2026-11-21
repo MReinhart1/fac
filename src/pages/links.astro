@@ -1,0 +1,30 @@
+---
+import ExternalLink from '@lucide/astro/icons/external-link'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { linkGroups } from '../data/links.js'
+---
+
+<BaseLayout title="Links" description="External firearms organizations and resources." eyebrow="Resources" heading="Links">
+  <Fragment slot="intro">External organizations and resources. We are not responsible for the content of external sites.</Fragment>
+  <div class="grid items-start gap-5 nav:grid-cols-2">
+    {
+      linkGroups.map((group) => (
+        <ul class="card divide-y divide-line px-2">
+          {group.map((item) => (
+            <li>
+              <a
+                class="group flex items-center justify-between gap-3 rounded-lg px-3 py-3.5 font-semibold text-navy transition-colors hover:text-red"
+                href={item.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {item.name}
+                <ExternalLink size={16} class="shrink-0 text-muted/60 group-hover:text-red" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      ))
+    }
+  </div>
+</BaseLayout>

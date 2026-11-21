@@ -1,0 +1,77 @@
+---
+import ArrowRight from '@lucide/astro/icons/arrow-right'
+import Check from '@lucide/astro/icons/check'
+import Disclosure from './Disclosure.astro'
+
+interface Props {
+  course: {
+    code: string
+    title: string
+    packageId: string
+    bullets: string[]
+    details: { label?: string; text: string }[]
+  }
+  day: string
+  dark?: boolean
+}
+
+const { course, day, dark = false } = Astro.props
+const soft = dark ? 'text-cream/80' : 'text-muted'
+const border = dark ? 'border-cream/15' : 'border-line'
+---
+
+<article
+  class:list={[
+    'relative flex flex-col overflow-hidden rounded-2xl border p-6 nav:p-8',
+    dark ? 'border-navy bg-navy text-cream' : 'border-line bg-white shadow-sm',
+  ]}
+>
+  <div class="flex items-center justify-between gap-3">
+    <span
+      class:list={[
+        'rounded-md px-2.5 py-1 font-display text-xs font-extrabold tracking-[0.12em]',
+        dark ? 'bg-steel text-navy' : 'bg-cream text-maroon',
+      ]}
+    >
+      {course.code}
+    </span>
+    <span class:list={['text-xs font-bold tracking-[0.12em] uppercase', dark ? 'text-steel' : 'text-red']}>{day}</span>
+  </div>
+  <h3 class="mt-5 mb-4 max-w-110 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.02em] text-balance">{course.title}</h3>
+  <ul class="mb-5 grid gap-2 text-[15px]">
+    {
+      course.bullets.map((bullet) => (
+        <li class="flex items-start gap-2.5">
+          <Check size={18} class:list={['mt-0.5 shrink-0', dark ? 'text-steel' : 'text-red']} />
+          <span class={soft}>{bullet}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <Disclosure
+    summary={`More about the ${course.code}`}
+    class:list={['border-t text-sm', border]}
+    summaryClass="min-h-12"
+    iconClass={dark ? 'bg-cream/10' : 'bg-paper text-red'}
+  >
+    <div class:list={['pb-4 leading-relaxed', soft]}>
+      {
+        course.details.map((item) => (
+          <p class="mt-2 first:mt-0">
+            {item.label && <strong class={dark ? 'text-cream' : 'text-navy'}>{item.label}: </strong>}
+            {item.text}
+          </p>
+        ))
+      }
+    </div>
+  </Disclosure>
+
+  <a
+    href={`/register?course=${course.packageId}`}
+    class:list={['btn mt-auto w-full justify-between', dark ? 'bg-cream text-navy hover:bg-white' : 'btn-navy']}
+  >
+    Register for the {course.code}
+    <ArrowRight size={18} />
+  </a>
+</article>

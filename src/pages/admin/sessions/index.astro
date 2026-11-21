@@ -1,0 +1,79 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+import { isSaturday, isValidDate } from '../../../data/dates.js'
+import { booking } from '../../../data/site.js'
+import { actorOf, isOwner, messageFor, readForm, redirectWith } from '../../../lib/admin.js'
+import { store } from '../../../lib/db.js'
+import { refreshDatePages } from '../../../lib/public-sessions.js'
+
+export const prerender = false
+
+const user = Astro.locals.user
+const owner = isOwner(user)
+const showPast = Astro.url.searchParams.get('past') === '1'
+
+if (Astro.request.method === 'POST') {
+  if (!owner) return new Response('Only the owner can add course weekends.', { status: 403 })
+  const form = await readForm(Astro.request)
+  const capacity = Number(form.capacity)
+  try {
+    if (!isValidDate(form.startDate)) throw new Error('date')
+    if (!isSaturday(form.startDate)) return redirectWith(Astro.redirect, '/admin/sessions', 'Pick the Saturday the weekend starts on.', 'error')
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 200) {
+      return redirectWith(Astro.redirect, '/admin/sessions', 'Seats must be a whole number between 1 and 200.', 'error')
+    }
+    const id = await store().createSession({ startDate: form.startDate, capacity, notes: form.notes ?? '' }, actorOf(user))
+    await refreshDatePages(Astro.cache)
+    return redirectWith(Astro.redirect, `/admin/sessions/${id}`, 'Course weekend added. It now shows on the website.')
+  } catch (error) {
+    const message = error.message === 'date' ? 'Please enter a valid date.' : messageFor(error)
+    return redirectWith(Astro.redirect, '/admin/sessions', message, 'error')
+  }
+}
+
+const weekends = await store().listSessions({ includePast: showPast, instructorId: owner ? undefined : user.id })
+---
+
+<AdminLayout title="Course weekends">
+  {
+    owner && (
+      <form method="post" class="card mb-8 grid gap-4 p-5 sm:grid-cols-[1fr_1fr_2fr_auto] sm:items-end">
+        <label class="field-label">
+          Saturday it starts
+          <input class="field" type="date" name="startDate" required />
+        </label>
+        <label class="field-label">
+          Seats
+          <input class="field" type="number" name="capacity" min="1" max="200" value={booking.defaultCapacity} required />
+        </label>
+        <label class="field-label">
+          Notes (staff only)
+          <input class="field" name="notes" maxlength="500" />
+        </label>
+        <button class="btn btn-navy" type="submit">
+          Add weekend
+        </button>
+      </form>
+    )
+  }
+
+  <div class="mb-3 flex items-center justify-between gap-4">
+    <h2 class="card-heading mb-0">{showPast ? 'All weekends, newest first' : 'Upcoming weekends'}</h2>
+    <a class="link text-sm" href={showPast ? '/admin/sessions' : '/admin/sessions?past=1'}>{showPast ? 'Show upcoming only' : 'Include past weekends'}</a>
+  </div>
+  <ul class="card divide-y divide-line">
+    {
+      weekends.map((w) => (
+        <li>
+          <a class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-paper" href={`/admin/sessions/${w.id}`}>
+            <span class="font-semibold">{w.label}</span>
+            <span class="text-sm text-muted">
+              {w.seatsTaken} / {w.capacity} seats · <span class="capitalize">{w.full && w.status === 'open' ? 'full' : w.status}</span>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+    {weekends.length === 0 && <li class="px-5 py-6 text-muted">No weekends to show.</li>}
+  </ul>
+</AdminLayout>

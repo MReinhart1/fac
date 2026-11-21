@@ -1,0 +1,74 @@
+---
+import FileText from '@lucide/astro/icons/file-text'
+import Phone from '@lucide/astro/icons/phone'
+import CfpNotice from '../components/CfpNotice.astro'
+import Disclosure from '../components/Disclosure.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { faqs } from '../data/faqs.js'
+import { isExternal, phone } from '../data/site.js'
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.question,
+    acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+  })),
+}
+---
+
+<BaseLayout
+  title="FAQ"
+  description="Answers about the CFSC and CRFSC: exams, manuals, eligibility, minors, accessibility and more."
+  eyebrow="Frequently asked questions"
+  heading="Answers before you register"
+>
+  <Fragment slot="intro">Common questions about course requirements, exams, manuals, and eligibility.</Fragment>
+
+  <div class="grid items-start gap-8 nav:grid-cols-[1.7fr_1fr]">
+    <section class="card px-5 nav:px-7" aria-label="Frequently asked questions">
+      {
+        faqs.map((faq, index) => (
+          <Disclosure
+            summary={faq.question}
+            open={index === 0}
+            class="border-b border-line last:border-0"
+            summaryClass="min-h-16 py-3 font-display text-[17px] hover:text-red"
+            iconClass="bg-cream text-red"
+          >
+            <div class="max-w-[720px] pr-10 pb-6 text-[15px] leading-[1.7] text-muted">
+              <p class="mb-2.5">{faq.answer}</p>
+              {faq.link && (
+                <a class="link" href={faq.link} {...(isExternal(faq.link) ? { target: '_blank', rel: 'noreferrer' } : {})}>
+                  {faq.linkText}
+                </a>
+              )}
+            </div>
+          </Disclosure>
+        ))
+      }
+    </section>
+
+    <aside class="grid gap-4 nav:sticky nav:top-28">
+      <div class="rounded-2xl bg-navy p-6 text-cream">
+        <h2 class="font-display text-xl font-bold">Still have questions?</h2>
+        <p class="mt-2 text-sm text-cream/75">Call us or send a message. Please allow about one business day for a reply.</p>
+        <a class="mt-5 flex items-center gap-2.5 font-display text-lg font-bold hover:text-white" href={phone.href}>
+          <Phone size={18} class="text-steel" />
+          {phone.display}
+        </a>
+        <a class="btn mt-5 w-full" href="/contact">Send a message</a>
+      </div>
+      <a class="card flex items-center gap-3.5 p-5 transition-colors hover:border-red" href="/consent">
+        <span class="icon-chip"><FileText size={20} /></span>
+        <span>
+          <strong class="block font-display">Under 18?</strong>
+          <span class="text-sm text-muted">Print the parent / guardian consent form</span>
+        </span>
+      </a>
+      <CfpNotice short />
+    </aside>
+  </div>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+</BaseLayout>

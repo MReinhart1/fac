@@ -1,0 +1,43 @@
+---
+import Printer from '@lucide/astro/icons/printer'
+import SignatureLine from '../components/SignatureLine.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { site } from '../data/site.js'
+
+const grid = 'grid gap-x-8 gap-y-7 nav:grid-cols-2'
+const studentLines = ['Student name', 'Student date of birth', 'Course date', 'Parent / guardian name', 'Relationship to student', 'Phone']
+const signatureLines = ['Parent / guardian signature', 'Date']
+---
+
+<BaseLayout
+  title="Parental Consent Form"
+  description="Printable parent or legal guardian consent form for students under 18 taking the CFSC."
+  eyebrow="Students under 18"
+  heading="Parent / legal guardian consent form"
+  hideBandOnPrint
+>
+  <Fragment slot="intro">A signed consent form is required for any student under 18 taking the CFSC. Print this page, complete it, and sign it.</Fragment>
+
+  <section class="card max-w-[820px] p-8 nav:p-10 print:max-w-none print:border-0 print:p-0">
+    <h2 class="mb-7 font-display text-2xl font-extrabold">{site.name} — Consent to Participate</h2>
+    <div class:list={[grid, 'mb-8']}>
+      {studentLines.map((label) => <SignatureLine label={label} />)}
+    </div>
+    <p class="mb-8 leading-[1.75] text-navy">
+      I am the parent or legal guardian of the student named above. I consent to the student's participation in the Canadian Firearms Safety
+      Course (CFSC) and exam. I understand that a person must be at least 18 years of age to possess a firearm, and that students under 18 are
+      not eligible to take the CRFSC exam but may take the course for educational purposes.
+    </p>
+    <div class={grid}>
+      {signatureLines.map((label) => <SignatureLine label={label} />)}
+    </div>
+  </section>
+  <div class="mt-6 flex flex-wrap items-center gap-5 print:hidden">
+    <button class="btn" type="button" data-print><Printer size={18} /> Print form</button>
+    <a class="arrow-link" href="/faq">Back to FAQ</a>
+  </div>
+</BaseLayout>
+
+<script>
+  document.querySelector('[data-print]')?.addEventListener('click', () => window.print())
+</script>

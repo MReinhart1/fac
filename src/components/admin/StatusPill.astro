@@ -1,0 +1,11 @@
+---
+import { statusOf } from '../../lib/admin.js'
+
+interface Props {
+  status: string
+}
+
+const { label, tone } = statusOf(Astro.props.status)
+---
+
+<span class:list={['pill', tone]}>{label}</span>

@@ -1,0 +1,61 @@
+---
+import ArrowRight from '@lucide/astro/icons/arrow-right'
+import { GUIDE_PRICE, money } from '../data/courses.js'
+
+interface Props {
+  pkg: {
+    id: string
+    title: string
+    covers: string
+    coursePrice: number
+    exams: number
+    total: number
+    note?: string
+  }
+  /** Show the course + guide breakdown (pricing page). */
+  detailed?: boolean
+}
+
+const { pkg, detailed = false } = Astro.props
+const featured = pkg.id === 'package'
+const soft = featured ? 'text-cream/75' : 'text-muted'
+const line = featured ? 'border-cream/15' : 'border-line'
+---
+
+<article
+  class:list={[
+    'relative flex flex-col rounded-2xl border p-6',
+    featured ? 'border-navy bg-navy text-cream shadow-lg' : 'border-line bg-white',
+  ]}
+>
+  {featured && <span class="absolute -top-3 left-6 rounded-full bg-red px-3 py-1 text-xs font-bold text-white">Both courses</span>}
+  <p class:list={['text-xs font-bold tracking-[0.12em] uppercase', featured ? 'text-steel' : 'text-red']}>{pkg.covers}</p>
+  <h3 class="mt-2 font-display text-lg leading-snug font-bold">{pkg.title}</h3>
+  <p class="mt-4 flex items-baseline gap-1.5">
+    <span class="font-display text-[34px] leading-none font-extrabold tracking-[-0.02em]">{money(pkg.total)}</span>
+  </p>
+  <p class:list={['mt-1.5 text-[13px]', soft]}>Taxes and student guide included</p>
+  {pkg.note && <p class:list={['mt-3 text-[13px] leading-normal', soft]}>{pkg.note}</p>}
+
+  {
+    detailed && (
+      <dl class:list={['mt-5 border-t text-sm', line]}>
+        <div class:list={['flex justify-between gap-4 border-b py-2.5', line]}>
+          <dt class={soft}>Course, including {pkg.exams > 1 ? 'exams' : 'exam'}</dt>
+          <dd class="font-bold">{money(pkg.coursePrice)}</dd>
+        </div>
+        <div class:list={['flex justify-between gap-4 border-b py-2.5', line]}>
+          <dt class={soft}>Student guide</dt>
+          <dd class="font-bold">{money(GUIDE_PRICE)}</dd>
+        </div>
+      </dl>
+    )
+  }
+
+  <a
+    class:list={['btn mt-auto w-full justify-between', featured ? '' : 'btn-outline', detailed ? 'mt-6' : 'mt-6']}
+    href={`/register?course=${pkg.id}`}
+  >
+    Register <ArrowRight size={18} />
+  </a>
+</article>

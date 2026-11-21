@@ -1,0 +1,80 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+import { EMAIL_FROM, OWNER_NOTIFY_EMAIL, RESEND_API_KEY } from 'astro:env/server'
+import { formatDateTime, isOwner } from '../../../lib/admin.js'
+import { store } from '../../../lib/db.js'
+import { previews } from '../../../lib/email/samples.js'
+
+export const prerender = false
+
+if (!isOwner(Astro.locals.user)) return new Response('Only the owner can see emails.', { status: 403 })
+
+const ready = Boolean(RESEND_API_KEY && EMAIL_FROM)
+const emails = await store().listEmails({ limit: 100 })
+const templates = Object.entries(previews(Astro.url.origin))
+const tone = { sent: 'bg-steel-soft text-navy', skipped: 'bg-cream text-maroon', failed: 'bg-danger-soft text-danger-ink' }
+const statusLabel = { sent: 'Sent', skipped: 'Not sent', failed: 'Failed' }
+---
+
+<AdminLayout title="Emails">
+  <section class:list={['card mb-6 p-5', ready ? '' : 'border-red/40']}>
+    <h2 class="card-heading">{ready ? 'Email is set up' : 'Email is not set up yet'}</h2>
+    {
+      ready ? (
+        <p class="body-text text-sm">
+          Sending from <b>{EMAIL_FROM}</b>. Owner notifications go to <b>{OWNER_NOTIFY_EMAIL || 'nobody (OWNER_NOTIFY_EMAIL is empty)'}</b>.
+        </p>
+      ) : (
+        <p class="body-text text-sm">
+          Nothing is being sent: emails are recorded below as “Not sent”. Add <code>RESEND_API_KEY</code>, <code>EMAIL_FROM</code> and{' '}
+          <code>OWNER_NOTIFY_EMAIL</code> to the site’s settings (see the README).
+        </p>
+      )
+    }
+  </section>
+
+  <section class="mb-8">
+    <h2 class="card-heading">Preview each email</h2>
+    <ul class="card divide-y divide-line text-sm">
+      {
+        templates.map(([key, { label, email }]) => (
+          <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <span>
+              <b>{label}</b>
+              <span class="block text-muted">{email.subject}</span>
+            </span>
+            <a class="link" href={`/admin/emails/preview/${key}`} target="_blank" rel="noreferrer">
+              Preview
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <h2 class="card-heading">Recent emails</h2>
+  <div class="card overflow-x-auto">
+    <table class="w-full min-w-[640px] text-left text-sm">
+      <thead class="border-b border-line text-xs tracking-[0.08em] text-muted uppercase">
+        <tr><th class="px-3 py-2.5">When</th><th class="px-3 py-2.5">To</th><th class="px-3 py-2.5">Subject</th><th class="px-3 py-2.5">Status</th></tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {
+          emails.map((e) => (
+            <tr>
+              <td class="px-3 py-2.5 whitespace-nowrap">{formatDateTime(e.at)}</td>
+              <td class="px-3 py-2.5">{e.to.join(', ') || '—'}</td>
+              <td class="px-3 py-2.5">
+                {e.registrationId ? <a class="link" href={`/admin/registrations/${e.registrationId}`}>{e.subject}</a> : e.subject}
+              </td>
+              <td class="px-3 py-2.5">
+                <span class:list={['pill', tone[e.status]]} title={e.error ?? ''}>{statusLabel[e.status] ?? e.status}</span>
+              </td>
+            </tr>
+          ))
+        }
+        {emails.length === 0 && <tr><td class="px-3 py-6 text-muted" colspan="4">No emails yet.</td></tr>}
+      </tbody>
+    </table>
+  </div>
+</AdminLayout>

@@ -1,0 +1,54 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { actorOf, formatDateTime, isOwner, messageFor, readForm, redirectWith } from '../../lib/admin.js'
+import { store } from '../../lib/db.js'
+
+export const prerender = false
+
+const user = Astro.locals.user
+if (!isOwner(user)) return new Response('Only the owner can see messages.', { status: 403 })
+const data = store()
+
+if (Astro.request.method === 'POST') {
+  const form = await readForm(Astro.request)
+  try {
+    await data.markMessageRead(form.id, actorOf(user))
+    return redirectWith(Astro.redirect, '/admin/messages', 'Marked as read.')
+  } catch (error) {
+    return redirectWith(Astro.redirect, '/admin/messages', messageFor(error), 'error')
+  }
+}
+
+const messages = await data.listMessages()
+---
+
+<AdminLayout title="Contact messages">
+  <ul class="grid gap-4">
+    {
+      messages.map((m) => (
+        <li class:list={['card p-5', { 'border-red/40': !m.readAt }]}>
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-3">
+            <p class="font-semibold">
+              {m.name} · <a class="link" href={`mailto:${m.email}`}>{m.email}</a>
+            </p>
+            <p class="text-sm text-muted">{formatDateTime(m.createdAt)}</p>
+          </div>
+          <p class="body-text whitespace-pre-line">{m.comments}</p>
+          <div class="mt-3 flex items-center justify-between gap-3 text-sm">
+            {m.readAt ? (
+              <span class="text-muted">Read by {m.readBy?.name}</span>
+            ) : (
+              <form method="post">
+                <input type="hidden" name="id" value={m._id.toString()} />
+                <button class="btn btn-outline min-h-9 px-3 text-sm" type="submit">
+                  Mark as read
+                </button>
+              </form>
+            )}
+          </div>
+        </li>
+      ))
+    }
+    {messages.length === 0 && <li class="card p-5 text-muted">No messages yet.</li>}
+  </ul>
+</AdminLayout>

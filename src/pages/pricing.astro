@@ -1,0 +1,22 @@
+---
+import Notice from '../components/Notice.astro'
+import PackageCard from '../components/PackageCard.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { GUIDE_PRICE, money, packages } from '../data/courses.js'
+---
+
+<BaseLayout
+  title="Pricing"
+  description="Prices for the CFSC, CRFSC and complete firearms course packages in Toronto. All taxes included."
+  eyebrow="How much"
+  heading="Pricing"
+>
+  <Fragment slot="intro">All courses and exams require prepayment in full by Interac e-Transfer. Prices include all applicable taxes.</Fragment>
+  <div class="grid gap-5 pt-3 sm:grid-cols-2 lg:grid-cols-4">
+    {packages.map((pkg) => <PackageCard pkg={pkg} detailed />)}
+  </div>
+  <Notice title={`Canadian Firearms Course Student Guide — ${money(GUIDE_PRICE)} each`} class="mt-8">
+    Guides are only available for pickup at one of our class sessions at the Legion Hall. Please <a class="link" href="/contact">contact us</a>
+    ahead of time to ensure we have supplies on hand. Already have a guide? You can deduct it when you register.
+  </Notice>
+</BaseLayout>

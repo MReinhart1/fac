@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "firearms-academy",
+  "main": "./src/worker.js",
+  "compatibility_date": "2026-11-17",
+  // Node.js APIs for the MongoDB driver and Better Auth (sockets, TLS, crypto, AsyncLocalStorage).
+  "compatibility_flags": ["nodejs_compat"],
+  // Hourly: class reminders and instructor class lists (src/worker.js → /api/cron/hourly).
+  "triggers": { "crons": ["0 * * * *"] },
+  "observability": { "enabled": true },
+  // Serve /faq from faq/index.html and redirect /faq/ to /faq, matching the site's links and canonical URLs.
+  "assets": { "binding": "ASSETS", "html_handling": "drop-trailing-slash" },
+  // Secrets are not stored here. Production: `npx wrangler secret put NAME` for each variable in .env.example.
+  // Local development reads them from .env.
+  "vars": { "MONGODB_DB": "fac", "BETTER_AUTH_URL": "https://firearmsacademy.ca" }
+}

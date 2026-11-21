@@ -1,0 +1,17 @@
+---
+import LocationCard from '../components/LocationCard.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { location } from '../data/site.js'
+---
+
+<BaseLayout
+  title="Course Location"
+  description={`Our firearms courses are held at ${location.name}, ${location.address}.`}
+  eyebrow="Where"
+  heading="Course location"
+>
+  <Fragment slot="intro">All of our courses are held at {location.name} on Weston Road in Toronto.</Fragment>
+  <div class="max-w-[900px]">
+    <LocationCard mapClass="h-[320px] nav:h-[420px]" />
+  </div>
+</BaseLayout>

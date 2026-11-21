@@ -1,0 +1,100 @@
+---
+import MapPin from '@lucide/astro/icons/map-pin'
+import Phone from '@lucide/astro/icons/phone'
+import ShieldCheck from '@lucide/astro/icons/shield-check'
+import { location, phone } from '../data/site.js'
+import { cleanPath } from '../utils/cleanPath.js'
+import Logo from './Logo.astro'
+
+const navLinks = [
+  { href: '/#courses', label: 'Courses' },
+  { href: '/dates', label: 'Dates' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/locations', label: 'Location' },
+  { href: '/hunter-education', label: 'Hunter Ed' },
+  { href: '/faq', label: 'FAQ' },
+  { href: '/contact', label: 'Contact' },
+]
+
+const path = cleanPath(Astro.url.pathname)
+const isCurrent = (href: string) => href === path
+---
+
+<div class="bg-navy text-[13px] text-cream/90 print:hidden">
+  <div class="page-width flex min-h-10 items-center justify-between gap-4">
+    <p class="flex items-center gap-2 max-nav:hidden">
+      <ShieldCheck size={15} class="text-steel" /> FSESO-certified, CFO-designated instructors
+    </p>
+    <p class="flex items-center gap-2 max-nav:hidden">
+      <MapPin size={15} class="text-steel" />
+      {location.name}, {location.street}
+    </p>
+    <a class="flex items-center gap-2 font-semibold text-cream hover:text-white max-nav:mx-auto" href={phone.href}>
+      <Phone size={15} class="text-steel" />
+      {phone.display}
+    </a>
+  </div>
+</div>
+
+<header class="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur print:hidden">
+  <div class="page-width relative flex h-18 items-center justify-between gap-6">
+    <Logo />
+
+    <button
+      id="menu-toggle"
+      class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-bold text-navy lg:hidden"
+      type="button"
+      aria-controls="main-nav"
+      aria-expanded="false"
+    >
+      <span class="grid gap-[3px]" aria-hidden="true">
+        <span class="block h-0.5 w-4 rounded bg-current"></span>
+        <span class="block h-0.5 w-4 rounded bg-current"></span>
+        <span class="block h-0.5 w-4 rounded bg-current"></span>
+      </span>
+      Menu
+    </button>
+
+    <nav
+      id="main-nav"
+      class="absolute inset-x-4 top-[calc(100%+8px)] hidden gap-1 rounded-xl border border-line bg-white p-3 text-[15px] font-semibold shadow-xl data-[open]:grid lg:static lg:flex lg:items-center lg:gap-1 lg:border-0 lg:bg-transparent lg:p-0 lg:text-sm lg:shadow-none"
+      aria-label="Main navigation"
+    >
+      {
+        navLinks.map((item) => (
+          <a
+            class="rounded-lg px-3 py-2.5 text-navy transition-colors hover:bg-paper hover:text-red aria-[current=page]:text-red lg:py-2"
+            href={item.href}
+            aria-current={isCurrent(item.href) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+      <a class="btn mt-2 min-h-11 px-5 lg:mt-0 lg:ml-3" href="/register" aria-current={isCurrent('/register') ? 'page' : undefined}>
+        Register
+      </a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById('menu-toggle')
+  const nav = document.getElementById('main-nav')
+
+  const setOpen = (open: boolean) => {
+    nav?.toggleAttribute('data-open', open)
+    toggle?.setAttribute('aria-expanded', String(open))
+  }
+
+  toggle?.addEventListener('click', () => setOpen(!nav?.hasAttribute('data-open')))
+  nav?.addEventListener('click', (event) => {
+    if ((event.target as HTMLElement).closest('a')) setOpen(false)
+  })
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && nav?.hasAttribute('data-open')) {
+      setOpen(false)
+      toggle?.focus()
+    }
+  })
+</script>

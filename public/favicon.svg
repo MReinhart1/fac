@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <rect width="48" height="48" rx="11" fill="#003049"/>
+  <text x="24" y="27.5" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="15" font-weight="800" letter-spacing="0.5" fill="#fdf0d5">FAC</text>
+  <rect x="13" y="33" width="22" height="3" rx="1.5" fill="#c1121f"/>
+</svg>

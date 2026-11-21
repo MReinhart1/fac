@@ -1,0 +1,112 @@
+@import 'tailwindcss';
+
+/*
+ * Palette: https://coolors.co/palette/780000-c1121f-fdf0d5-003049-669bbc
+ * Contrast (WCAG): navy on white 13.8, red on white 6.2, red on cream 5.5, maroon on white 11.7,
+ * steel on navy 4.6. Steel on white is only 3.0, so steel is never used for text on light backgrounds.
+ */
+@theme {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Archivo', 'DM Sans', system-ui, sans-serif;
+
+  /* Palette */
+  --color-maroon: #780000;
+  --color-red: #c1121f;
+  --color-cream: #fdf0d5;
+  --color-navy: #003049;
+  --color-steel: #669bbc;
+
+  /* Derived */
+  --color-navy-deep: #00243a;
+  --color-paper: color-mix(in oklab, var(--color-cream) 45%, white);
+  --color-muted: #4a5a66;
+  --color-line: color-mix(in oklab, var(--color-navy) 14%, transparent);
+  --color-steel-soft: color-mix(in oklab, var(--color-steel) 20%, white);
+
+  /* Status tones: soft background + readable ink */
+  --color-success-soft: var(--color-steel-soft);
+  --color-success-ink: var(--color-navy);
+  --color-danger-soft: color-mix(in oklab, var(--color-red) 12%, white);
+  --color-danger-ink: var(--color-maroon);
+
+  --breakpoint-nav: 54rem;
+}
+
+@layer base {
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-red;
+  }
+}
+
+/*
+ * Shared utilities, usable from both .astro pages and React islands.
+ * Defined with Tailwind's @utility so they work with variants (hover:, nav:, …) and
+ * can be overridden by plain utilities in markup (e.g. `btn bg-white`).
+ * Page-level html/body styling lives as utility classes in BaseLayout.astro.
+ */
+@utility page-width {
+  @apply mx-auto w-full max-w-300 px-4 nav:px-8;
+}
+@utility section {
+  @apply py-14 nav:py-20;
+}
+@utility eyebrow {
+  @apply mb-3 text-xs font-bold tracking-[0.14em] text-red uppercase;
+}
+@utility eyebrow-dark {
+  @apply mb-3 text-xs font-bold tracking-[0.14em] text-steel uppercase;
+}
+@utility section-title {
+  @apply font-display text-[clamp(28px,3.6vw,40px)] leading-[1.08] font-extrabold tracking-[-0.02em] text-balance;
+}
+@utility lead {
+  @apply text-[17px] leading-[1.65] text-muted nav:text-lg;
+}
+@utility body-text {
+  @apply leading-[1.65] text-muted;
+}
+@utility small-note {
+  @apply mt-2.5 text-[13px] leading-[1.55] text-muted;
+}
+@utility link {
+  @apply font-semibold text-red underline decoration-red/35 underline-offset-[3px] transition-colors hover:text-maroon hover:decoration-maroon;
+}
+@utility arrow-link {
+  @apply inline-flex items-center gap-2 font-bold text-navy transition-colors hover:text-red [&_svg]:transition-transform hover:[&_svg]:translate-x-0.5;
+}
+@utility card {
+  @apply rounded-xl border border-line bg-white;
+}
+@utility card-heading {
+  @apply mb-2 font-display text-[21px] leading-tight font-bold tracking-[-0.01em];
+}
+@utility icon-chip {
+  @apply grid size-11 shrink-0 place-items-center rounded-lg bg-cream text-red;
+}
+@utility btn {
+  @apply inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg bg-red px-6 text-[15px] font-bold text-white shadow-sm transition-colors hover:bg-maroon disabled:cursor-wait disabled:opacity-60;
+}
+@utility btn-navy {
+  @apply bg-navy hover:bg-navy-deep;
+}
+@utility btn-outline {
+  @apply bg-transparent text-navy shadow-none ring-2 ring-navy/80 ring-inset hover:bg-navy hover:text-white;
+}
+@utility btn-outline-light {
+  @apply bg-transparent text-cream shadow-none ring-2 ring-cream/60 ring-inset hover:bg-cream hover:text-navy;
+}
+@utility field-label {
+  @apply grid gap-1.5 text-[13px] font-bold text-navy;
+}
+@utility field {
+  @apply w-full rounded-lg border border-navy/20 bg-white px-3.5 py-3 text-[15px] font-normal text-navy transition-colors placeholder:text-muted/70 hover:border-navy/40 focus-visible:border-navy focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-red;
+}
+@utility pill {
+  @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold;
+}
+@utility pill-available {
+  @apply bg-steel-soft text-navy;
+}
+@utility pill-full {
+  @apply bg-danger-soft text-danger-ink;
+}

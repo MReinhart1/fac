@@ -1,0 +1,14 @@
+---
+// Decorative concentric rings (a nod to a target) for hero and page bands.
+interface Props {
+  class?: string
+}
+
+const { class: className } = Astro.props
+const radii = [40, 80, 120, 160, 200, 240, 280]
+---
+
+<svg class:list={['pointer-events-none absolute', className]} viewBox="0 0 600 600" fill="none" aria-hidden="true">
+  {radii.map((r, i) => <circle cx="300" cy="300" r={r} stroke="currentColor" stroke-width={i === 2 ? 3 : 1.5} />)}
+  <path d="M300 0v600M0 300h600" stroke="currentColor" stroke-width="1" />
+</svg>

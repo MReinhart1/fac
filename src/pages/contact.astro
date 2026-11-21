@@ -1,0 +1,37 @@
+---
+import MapPin from '@lucide/astro/icons/map-pin'
+import Phone from '@lucide/astro/icons/phone'
+import ContactForm from '../components/forms/ContactForm.jsx'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { location, phone } from '../data/site.js'
+---
+
+<BaseLayout
+  title="Contact Us"
+  description="Questions about our firearms courses? Send us a message or call."
+  eyebrow="Contact us"
+  heading="How can we help?"
+>
+  <Fragment slot="intro">The best way to reach us and receive a fast response is to use the form below.</Fragment>
+  <div class="grid items-start gap-6 nav:grid-cols-[1fr_1.5fr]">
+    <div class="grid gap-4">
+      <div class="rounded-2xl bg-navy p-7 text-cream">
+        <span class="eyebrow-dark">Questions about our courses</span>
+        <a class="mt-2 flex items-center gap-3 font-display text-[clamp(22px,2.6vw,30px)] font-extrabold hover:text-white" href={phone.href}>
+          <Phone size={24} class="shrink-0 text-steel" />
+          {phone.display}
+        </a>
+        <p class="mt-3 text-sm text-cream/75">You can leave a message at this number.</p>
+      </div>
+      <div class="card flex gap-4 p-6">
+        <span class="icon-chip"><MapPin size={20} /></span>
+        <div>
+          <h2 class="font-display text-lg font-bold">Course location</h2>
+          <p class="body-text text-sm">{location.name}<br />{location.address}</p>
+          <a class="link mt-1 inline-block text-sm" href="/locations">Map and directions</a>
+        </div>
+      </div>
+    </div>
+    <ContactForm client:load />
+  </div>
+</BaseLayout>

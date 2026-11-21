@@ -1,0 +1,243 @@
+---
+import NotifyBox from '../../../components/admin/NotifyBox.astro'
+import StatusPill from '../../../components/admin/StatusPill.astro'
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+import { money } from '../../../data/courses.js'
+import { weekendParts } from '../../../data/dates.js'
+import { actorOf, canSee, centsFrom, formatDateTime, isOwner, messageFor, readForm, redirectWith } from '../../../lib/admin.js'
+import { store } from '../../../lib/db.js'
+import { refreshDatePages } from '../../../lib/public-sessions.js'
+import { notifyCancelled, notifyMoved, notifyPaid, safely } from '../../../lib/email/notify.js'
+import { StoreError } from '../../../lib/store.js'
+
+export const prerender = false
+
+const user = Astro.locals.user
+const owner = isOwner(user)
+const id = Astro.params.id ?? ''
+const here = `/admin/registrations/${id}`
+const data = store()
+
+let reg
+try {
+  reg = await data.getRegistration(id)
+} catch (error) {
+  if (error instanceof StoreError && error.code === 'not_found') return new Response('Registration not found.', { status: 404 })
+  throw error
+}
+const weekend = await data.getSession(reg.courseSessionId.toString())
+if (!canSee(user, weekend)) return new Response('You are not assigned to this weekend.', { status: 403 })
+
+if (Astro.request.method === 'POST') {
+  const form = await readForm(Astro.request)
+  const actor = actorOf(user)
+  const ownerOnly = ['paid', 'cancel', 'move']
+  if (ownerOnly.includes(form.action) && !owner) return new Response('Only the owner can do that.', { status: 403 })
+  try {
+    if (form.action === 'paid') {
+      const amountCents = centsFrom(form.amount)
+      if (amountCents === null) throw new StoreError('invalid', 'Enter the amount received, e.g. 258.30.')
+      await data.markPaid(id, { method: form.method || 'e-Transfer', amountCents, note: form.note ?? '' }, actor)
+      await refreshDatePages(Astro.cache)
+      if (form.notify === 'on') await safely(notifyPaid(id, amountCents))
+      return redirectWith(Astro.redirect, here, form.notify === 'on' ? 'Payment recorded and confirmation emailed.' : 'Payment recorded.')
+    }
+    if (form.action === 'cancel') {
+      const refundCents = form.refund ? centsFrom(form.refund) : 0
+      if (refundCents === null) throw new StoreError('invalid', 'Enter the refund as an amount, e.g. 158.30, or leave it empty.')
+      await data.cancelRegistration(id, { refundCents, reason: form.reason ?? '' }, actor)
+      await refreshDatePages(Astro.cache)
+      if (form.notify === 'on') await safely(notifyCancelled(id, refundCents))
+      return redirectWith(Astro.redirect, here, 'Registration cancelled and the seat freed.')
+    }
+    if (form.action === 'move') {
+      await data.moveRegistration(id, form.toSessionId, actor)
+      await refreshDatePages(Astro.cache)
+      if (form.notify === 'on') await safely(notifyMoved(id, reg.startDate))
+      return redirectWith(Astro.redirect, here, 'Moved to the new weekend.')
+    }
+    if (form.action === 'details') {
+      await data.updateRegistrationDetails(
+        id,
+        {
+          consentReceived: form.consentReceived === 'on',
+          attendance: ['attended', 'no_show'].includes(form.attendance) ? form.attendance : null,
+          staffNotes: (form.staffNotes ?? '').slice(0, 2000),
+        },
+        actor,
+      )
+      return redirectWith(Astro.redirect, here, 'Saved.')
+    }
+    throw new StoreError('invalid', 'Unknown action.')
+  } catch (error) {
+    return redirectWith(Astro.redirect, here, messageFor(error), 'error')
+  }
+}
+
+const s = reg.student
+const otherWeekends = owner ? (await data.listSessions()).filter((w) => w.id !== weekend.id && !w.full) : []
+const paidIn = reg.payments.filter((p) => p.kind === 'payment').reduce((sum, p) => sum + p.amountCents, 0)
+const refunded = reg.payments.filter((p) => p.kind === 'refund').reduce((sum, p) => sum + p.amountCents, 0)
+const holdsSeat = reg.status === 'pending' || reg.status === 'paid'
+const emails = owner ? await data.listEmails({ registrationId: id }) : []
+const row = 'grid grid-cols-[10rem_1fr] gap-3 border-b border-line py-2.5 text-sm last:border-0'
+const dt = 'text-muted'
+---
+
+<AdminLayout title={`${s.firstName} ${s.familyName}`}>
+  <div class="-mt-4 mb-6 flex flex-wrap items-center gap-3 text-muted">
+    <StatusPill status={reg.status} />
+    <a class="link" href={`/admin/sessions/${weekend.id}`}>{weekend.label}</a>
+    <span>· {reg.packageTitle}</span>
+  </div>
+
+  <div class="grid items-start gap-6 lg:grid-cols-[1.4fr_1fr]">
+    <div class="grid gap-6">
+      <section class="card p-5">
+        <h2 class="card-heading">Registration</h2>
+        <dl>
+          <div class={row}><dt class={dt}>Email</dt><dd><a class="link" href={`mailto:${s.email}`}>{s.email}</a></dd></div>
+          <div class={row}><dt class={dt}>Phone</dt><dd>{s.phone}{s.phoneExt && ` ext. ${s.phoneExt}`}</dd></div>
+          {s.eveningPhone && <div class={row}><dt class={dt}>Evening phone</dt><dd>{s.eveningPhone}{s.eveningPhoneExt && ` ext. ${s.eveningPhoneExt}`}</dd></div>}
+          {s.nickname && <div class={row}><dt class={dt}>Nickname</dt><dd>{s.nickname}</dd></div>}
+          <div class={row}><dt class={dt}>Sit with</dt><dd>{reg.friendName || '—'}</dd></div>
+          <div class={row}><dt class={dt}>Student guide</dt><dd>{reg.hasGuide ? 'Already has one' : 'Needs one'}</dd></div>
+          <div class={row}><dt class={dt}>Earlier class waitlist</dt><dd>{reg.waitlistEarlier ? 'Yes' : 'No'}</dd></div>
+          {reg.pal && <div class={row}><dt class={dt}>PAL course</dt><dd>{reg.pal.courseDate} with {reg.pal.instructor}</dd></div>}
+          {reg.comments && <div class={row}><dt class={dt}>Comments</dt><dd class="whitespace-pre-line">{reg.comments}</dd></div>}
+          <div class={row}><dt class={dt}>Registered</dt><dd>{formatDateTime(reg.createdAt)}</dd></div>
+          {(reg.moves ?? []).map((move) => (
+            <div class={row}><dt class={dt}>Moved</dt><dd>{weekendParts(move.from).label} → {weekendParts(move.to).label} by {move.by.name}, {formatDateTime(move.at)}</dd></div>
+          ))}
+        </dl>
+      </section>
+
+      <form method="post" class="card grid gap-4 p-5">
+        <input type="hidden" name="action" value="details" />
+        <h2 class="card-heading mb-0">Course day</h2>
+        <label class="flex items-center gap-2.5 text-sm font-semibold">
+          <input class="size-4 accent-red" type="checkbox" name="consentReceived" checked={reg.consentReceived} />
+          Signed under-18 consent form received
+        </label>
+        <label class="field-label">
+          Attendance
+          <select class="field" name="attendance">
+            <option value="" selected={!reg.attendance}>Not recorded</option>
+            <option value="attended" selected={reg.attendance === 'attended'}>Attended</option>
+            <option value="no_show" selected={reg.attendance === 'no_show'}>No-show</option>
+          </select>
+        </label>
+        <label class="field-label">
+          Staff notes
+          <textarea class="field" name="staffNotes" rows="3" maxlength="2000">{reg.staffNotes}</textarea>
+        </label>
+        <div><button class="btn btn-navy" type="submit">Save</button></div>
+      </form>
+    </div>
+
+    {
+      owner && (
+        <div class="grid gap-6">
+          <section class="card p-5">
+            <h2 class="card-heading">Payment</h2>
+            <dl>
+              <div class={row}><dt class={dt}>Reference</dt><dd class="font-mono font-bold">{reg.reference}</dd></div>
+              <div class={row}><dt class={dt}>Amount due</dt><dd>{money(reg.amountDueCents)}</dd></div>
+              <div class={row}><dt class={dt}>Received</dt><dd>{money(paidIn)}{refunded > 0 && ` (refunded ${money(refunded)})`}</dd></div>
+              {reg.status === 'pending' && <div class={row}><dt class={dt}>Registered</dt><dd>{formatDateTime(reg.createdAt)}, not paid yet</dd></div>}
+            </dl>
+            {reg.payments.length > 0 && (
+              <ul class="mt-3 grid gap-1 text-xs text-muted">
+                {reg.payments.map((p) => (
+                  <li>
+                    {p.kind === 'refund' ? 'Refund' : p.method} {money(p.amountCents)} · {formatDateTime(p.receivedAt)} · {p.recordedBy.name}
+                    {p.note && ` · ${p.note}`}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {reg.status === 'pending' && (
+              <form method="post" class="mt-5 grid gap-3 border-t border-line pt-4">
+                <input type="hidden" name="action" value="paid" />
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <label class="field-label">
+                    Method
+                    <select class="field" name="method">
+                      <option>e-Transfer</option>
+                      <option>Cash</option>
+                      <option>Card</option>
+                      <option>Other</option>
+                    </select>
+                  </label>
+                  <label class="field-label">
+                    Amount received ($)
+                    <input class="field" name="amount" inputmode="decimal" value={(reg.amountDueCents / 100).toFixed(2)} required />
+                  </label>
+                </div>
+                <label class="field-label">
+                  Note (optional)
+                  <input class="field" name="note" maxlength="200" />
+                </label>
+                <NotifyBox label="Email the student their course confirmation" />
+                <div><button class="btn" type="submit">Mark paid</button></div>
+              </form>
+            )}
+          </section>
+
+          <section class="card p-5">
+            <h2 class="card-heading">Emails</h2>
+            {emails.length ? (
+              <ul class="grid gap-2 text-sm">
+                {emails.map((e) => (
+                  <li>
+                    <b>{e.status === 'sent' ? 'Sent' : e.status === 'skipped' ? 'Not sent' : 'Failed'}</b> · {e.subject}
+                    <span class="block text-xs text-muted">{formatDateTime(e.at)}{e.error ? ` · ${e.error}` : ''}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="text-sm text-muted">No emails yet.</p>
+            )}
+          </section>
+
+          {holdsSeat && otherWeekends.length > 0 && (
+            <form method="post" class="card grid gap-3 p-5">
+              <input type="hidden" name="action" value="move" />
+              <h2 class="card-heading mb-0">Move to another weekend</h2>
+              <select class="field" name="toSessionId" required>
+                {otherWeekends.map((w) => (
+                  <option value={w.id}>
+                    {w.label} ({w.seatsLeft} left)
+                  </option>
+                ))}
+              </select>
+              <p class="small-note mt-0">Any reschedule fee is not added automatically; record it as a note.</p>
+              <NotifyBox label="Email the student the new date" />
+              <div><button class="btn btn-outline" type="submit">Move</button></div>
+            </form>
+          )}
+
+          {reg.status !== 'cancelled' && (
+            <form method="post" class="card grid gap-3 p-5">
+              <input type="hidden" name="action" value="cancel" />
+              <h2 class="card-heading mb-0">{reg.status === 'pending' ? 'Remove from the class' : 'Cancel registration'}</h2>
+              {reg.status === 'pending' && <p class="small-note mt-0">Not paid yet. Removing the student frees their seat for someone else.</p>}
+              <label class="field-label">
+                Refund given ($, optional)
+                <input class="field" name="refund" inputmode="decimal" placeholder="0.00" />
+              </label>
+              <label class="field-label">
+                Reason
+                <input class="field" name="reason" maxlength="200" />
+              </label>
+              <p class="small-note mt-0">Policy: refund minus the $100 deposit if cancelled 14+ days before; none within 48 hours.</p>
+              <NotifyBox label="Email the student that it is cancelled" />
+              <div><button class="btn btn-outline" type="submit">{reg.status === 'pending' ? 'Remove and free the seat' : 'Cancel and free the seat'}</button></div>
+            </form>
+          )}
+        </div>
+      )
+    }
+  </div>
+</AdminLayout>

@@ -1,0 +1,99 @@
+---
+import MobileCta from '../components/MobileCta.astro'
+import PageBand from '../components/PageBand.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import { location, phone, site } from '../data/site.js'
+import { cleanPath } from '../utils/cleanPath.js'
+import '../styles/global.css'
+
+interface Props {
+  /** Page name for <title>; omit on the home page. */
+  title?: string
+  description?: string
+  /** Page band above the content. Without `heading`, the page lays out its own full-width sections. */
+  eyebrow?: string
+  heading?: string
+  /** Hide the page band when printing. */
+  hideBandOnPrint?: boolean
+  /** Add business structured data (home page). */
+  businessSchema?: boolean
+}
+
+const { title, description = site.description, eyebrow, heading, hideBandOnPrint = false, businessSchema = false } = Astro.props
+const fullTitle = title ? `${title} | ${site.name}` : `${site.name} | ${site.tagline}`
+const path = cleanPath(Astro.url.pathname)
+const canonical = new URL(path, Astro.site)
+const showMobileCta = path !== '/register'
+const intro = Astro.slots.has('intro') ? await Astro.slots.render('intro') : undefined
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'EducationalOrganization',
+  name: site.name,
+  url: Astro.site?.href,
+  telephone: phone.e164,
+  description: site.description,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: location.street,
+    addressLocality: location.city,
+    addressRegion: location.region,
+    postalCode: location.postalCode,
+    addressCountry: location.country,
+  },
+}
+---
+
+<!doctype html>
+<html lang="en-CA" class="motion-safe:scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#003049" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="en_CA" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+      rel="stylesheet"
+    />
+
+    {businessSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />}
+  </head>
+  <body class:list={['min-h-screen min-w-80 bg-white font-sans text-navy antialiased', { 'max-nav:pb-[72px]': showMobileCta }]}>
+    <a
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:shadow-lg"
+      href="#main">Skip to content</a
+    >
+    <SiteHeader />
+    <main id="main">
+      {
+        heading ? (
+          <>
+            <PageBand eyebrow={eyebrow ?? ''} title={heading} intro={intro} hideOnPrint={hideBandOnPrint} />
+            <div class="page-width py-12 nav:py-16 print:p-0">
+              <slot />
+            </div>
+          </>
+        ) : (
+          <slot />
+        )
+      }
+    </main>
+    <SiteFooter />
+    {showMobileCta && <MobileCta />}
+  </body>
+</html>

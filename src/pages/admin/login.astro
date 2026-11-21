@@ -1,0 +1,37 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { getAuth } from '../../lib/auth.js'
+
+export const prerender = false
+
+const rawNext = Astro.url.searchParams.get('next') ?? '/admin'
+// Only allow returning to a staff page on this site.
+const next = rawNext.startsWith('/admin') && !rawNext.startsWith('//') ? rawNext : '/admin'
+if (Astro.locals.user) return Astro.redirect(next)
+
+let error = ''
+let email = ''
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData()
+  email = String(form.get('email') ?? '').trim()
+  const password = String(form.get('password') ?? '')
+  const result = await getAuth().api.signInEmail({ body: { email, password }, headers: Astro.request.headers, asResponse: true })
+  if (result.ok) {
+    // Pass Better Auth's session cookie through to the browser, then go to the portal.
+    const headers = new Headers({ Location: next })
+    for (const cookie of result.headers.getSetCookie()) headers.append('Set-Cookie', cookie)
+    return new Response(null, { status: 303, headers })
+  }
+  error = result.status === 429 ? 'Too many attempts. Please wait a minute and try again.' : 'Wrong email or password.'
+}
+---
+
+<AdminLayout title="Staff sign in">
+  <form method="post" class="card grid max-w-sm gap-4 p-6">
+    <label class="field-label">Email<input class="field" type="email" name="email" value={email} required autocomplete="username" /></label>
+    <label class="field-label">Password<input class="field" type="password" name="password" required autocomplete="current-password" /></label>
+    {error && <p class="rounded-lg bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-ink" role="alert">{error}</p>}
+    <button class="btn btn-navy" type="submit">Sign in</button>
+    <p class="small-note mt-0">Accounts are created by the owner. Ask them if you need access.</p>
+  </form>
+</AdminLayout>

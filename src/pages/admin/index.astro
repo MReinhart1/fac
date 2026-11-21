@@ -1,0 +1,132 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { money } from '../../data/courses.js'
+import { isOwner } from '../../lib/admin.js'
+import { store } from '../../lib/db.js'
+
+export const prerender = false
+
+const user = Astro.locals.user
+const owner = isOwner(user)
+const data = store()
+
+const weekends = await data.listSessions({ instructorId: owner ? undefined : user.id })
+const counts = await data.rosterCounts(weekends.map((w) => w.id))
+const next = weekends.find((w) => w.status !== 'cancelled')
+const nextCounts = next ? (counts[next.id] ?? { pending: 0, paid: 0, outstandingCents: 0 }) : null
+const unpaid = owner ? await data.listUnpaid() : []
+const unread = owner ? await data.countUnreadMessages() : 0
+const outstanding = unpaid.reduce((sum, reg) => sum + reg.amountDueCents, 0)
+
+const stat = 'card p-5'
+const statValue = 'font-display text-3xl font-extrabold'
+const statLabel = 'text-sm text-muted'
+---
+
+<AdminLayout title="Dashboard">
+  {
+    owner && (
+      <form method="get" action="/admin/payments" class="card mb-6 flex flex-wrap items-end gap-3 p-5">
+        <label class="field-label min-w-60 flex-1">
+          Find a payment reference
+          <input class="field font-mono uppercase" name="ref" placeholder="FAC-0116-SMITH-K7Q" autocomplete="off" />
+        </label>
+        <button class="btn btn-navy" type="submit">Find</button>
+      </form>
+    )
+  }
+
+  <section class="mb-8">
+    <h2 class="card-heading">Next course weekend</h2>
+    {
+      next && nextCounts ? (
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <a class:list={[stat, 'hover:border-navy']} href={`/admin/sessions/${next.id}`}>
+            <p class={statValue}>{next.label}</p>
+            <p class={statLabel}>{next.status === 'open' ? 'Open for registration' : 'Closed to new registrations'} · view class list</p>
+          </a>
+          <div class={stat}>
+            <p class={statValue}>
+              {next.seatsTaken} / {next.capacity}
+            </p>
+            <p class={statLabel}>seats taken</p>
+          </div>
+          <div class={stat}>
+            <p class={statValue}>{nextCounts.paid}</p>
+            <p class={statLabel}>paid</p>
+          </div>
+          <div class={stat}>
+            <p class={statValue}>{nextCounts.pending}</p>
+            <p class={statLabel}>
+              unpaid{owner && nextCounts.pending > 0 ? ` · ${money(nextCounts.outstandingCents)} outstanding` : ''}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <p class="body-text">
+          {owner ? 'No upcoming course weekends. Add one under Course weekends.' : 'You are not assigned to any upcoming course weekends.'}
+        </p>
+      )
+    }
+  </section>
+
+  {
+    owner && (
+      <section class="mb-8 grid gap-4 sm:grid-cols-2">
+        <a class:list={[stat, 'hover:border-navy']} href="/admin/payments">
+          <p class={statValue}>{unpaid.length}</p>
+          <p class={statLabel}>unpaid registrations · {money(outstanding)} outstanding</p>
+        </a>
+        <a class:list={[stat, 'hover:border-navy']} href="/admin/messages">
+          <p class={statValue}>{unread}</p>
+          <p class={statLabel}>unread contact messages</p>
+        </a>
+      </section>
+    )
+  }
+
+  <section>
+    <h2 class="card-heading">Upcoming course weekends</h2>
+    <div class="card overflow-x-auto">
+      <table class="w-full min-w-[560px] text-left text-sm">
+        <thead class="border-b border-line text-xs tracking-[0.08em] text-muted uppercase">
+          <tr>
+            <th class="px-4 py-3">Weekend</th>
+            <th class="px-4 py-3">Seats</th>
+            <th class="px-4 py-3">Paid</th>
+            <th class="px-4 py-3">Unpaid</th>
+            <th class="px-4 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          {
+            weekends.map((w) => (
+              <tr class="hover:bg-paper">
+                <td class="px-4 py-3 font-semibold">
+                  <a class="link" href={`/admin/sessions/${w.id}`}>
+                    {w.label}
+                  </a>
+                </td>
+                <td class="px-4 py-3">
+                  {w.seatsTaken} / {w.capacity}
+                </td>
+                <td class="px-4 py-3">{counts[w.id]?.paid ?? 0}</td>
+                <td class="px-4 py-3">{counts[w.id]?.pending ?? 0}</td>
+                <td class="px-4 py-3 capitalize">{w.full && w.status === 'open' ? 'full' : w.status}</td>
+              </tr>
+            ))
+          }
+          {
+            weekends.length === 0 && (
+              <tr>
+                <td class="px-4 py-6 text-muted" colspan="5">
+                  No upcoming weekends.
+                </td>
+              </tr>
+            )
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</AdminLayout>

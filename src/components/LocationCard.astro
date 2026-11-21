@@ -1,0 +1,38 @@
+---
+import Accessibility from '@lucide/astro/icons/accessibility'
+import MapPin from '@lucide/astro/icons/map-pin'
+import { location } from '../data/site.js'
+
+interface Props {
+  mapClass?: string
+}
+
+const { mapClass = 'h-64' } = Astro.props
+const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(location.address)}`
+---
+
+<div class="card overflow-hidden">
+  <iframe
+    class:list={['block w-full border-0 bg-paper', mapClass]}
+    title={`Map of ${location.name}`}
+    src={location.mapEmbedUrl}
+    loading="lazy"
+    referrerpolicy="no-referrer-when-downgrade"></iframe>
+  <div class="grid gap-4 p-6">
+    <div class="flex gap-3.5">
+      <span class="icon-chip"><MapPin size={20} /></span>
+      <div>
+        <h3 class="font-display text-lg font-bold">{location.name} ({location.area})</h3>
+        <p class="body-text">{location.address}</p>
+        <a class="link mt-1 inline-block text-sm" href={directionsUrl} target="_blank" rel="noreferrer">Get directions</a>
+      </div>
+    </div>
+    <div class="flex gap-3.5">
+      <span class="icon-chip"><Accessibility size={20} /></span>
+      <p class="body-text text-sm">
+        Our Legion Hall location is not wheelchair accessible. <a class="link" href="/contact">Contact us</a> if special access arrangements
+        are needed.
+      </p>
+    </div>
+  </div>
+</div>

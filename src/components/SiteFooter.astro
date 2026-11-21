@@ -1,0 +1,75 @@
+---
+import MapPin from '@lucide/astro/icons/map-pin'
+import Phone from '@lucide/astro/icons/phone'
+import { cfp, location, phone, site } from '../data/site.js'
+import Logo from './Logo.astro'
+
+const columns = [
+  {
+    title: 'Courses',
+    links: [
+      { href: '/#courses', label: 'CFSC & CRFSC' },
+      { href: '/dates', label: 'Course dates' },
+      { href: '/pricing', label: 'Pricing' },
+      { href: '/register', label: 'Register' },
+      { href: '/hunter-education', label: 'Hunter education' },
+    ],
+  },
+  {
+    title: 'Help',
+    links: [
+      { href: '/faq', label: 'FAQ' },
+      { href: '/certified', label: 'FSESO certified' },
+      { href: '/consent', label: 'Under-18 consent form' },
+      { href: '/links', label: 'Links' },
+      { href: '/contact', label: 'Contact us' },
+    ],
+  },
+]
+---
+
+<footer class="bg-navy text-cream/80 print:hidden">
+  <div class="page-width grid gap-10 py-14 nav:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+    <div>
+      <Logo inverse />
+      <p class="mt-5 max-w-xs text-sm leading-relaxed">
+        Canadian Firearms Safety Courses (CFSC) and Restricted courses (CRFSC) on weekends in Toronto.
+      </p>
+      <p class="mt-4 max-w-xs text-xs leading-relaxed text-cream/60">
+        We are not the Canadian Firearms Program. For licence questions call <a class="underline hover:text-white" href={cfp.phoneHref}
+          >{cfp.phoneDisplay}</a
+        >.
+      </p>
+    </div>
+    {
+      columns.map((column) => (
+        <nav aria-label={column.title}>
+          <h2 class="mb-4 text-xs font-bold tracking-[0.14em] text-steel uppercase">{column.title}</h2>
+          <ul class="grid gap-2.5 text-sm">
+            {column.links.map((item) => (
+              <li>
+                <a class="hover:text-white" href={item.href}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+    <div>
+      <h2 class="mb-4 text-xs font-bold tracking-[0.14em] text-steel uppercase">Contact</h2>
+      <a class="flex items-center gap-2.5 font-display text-lg font-bold text-cream hover:text-white" href={phone.href}>
+        <Phone size={18} class="text-steel" />
+        {phone.display}
+      </a>
+      <p class="mt-4 flex gap-2.5 text-sm leading-relaxed">
+        <MapPin size={18} class="mt-0.5 shrink-0 text-steel" />
+        <span>{location.name}<br />{location.address}</span>
+      </p>
+    </div>
+  </div>
+  <div class="border-t border-cream/10">
+    <p class="page-width py-5 text-xs text-cream/55">© {new Date().getFullYear()} {site.name}</p>
+  </div>
+</footer>

@@ -1,0 +1,13 @@
+---
+interface Props {
+  title: string
+  class?: string
+}
+
+const { title, class: className } = Astro.props
+---
+
+<aside class:list={['rounded-xl border-l-4 border-red bg-cream px-5 py-4.5 text-[15px] leading-[1.6] print:hidden', className]}>
+  <strong class="font-display text-navy">{title}</strong>
+  <p class="mt-1 text-navy/80"><slot /></p>
+</aside>

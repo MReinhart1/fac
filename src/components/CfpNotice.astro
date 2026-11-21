@@ -1,0 +1,16 @@
+---
+import { cfp } from '../data/site.js'
+import Notice from './Notice.astro'
+
+interface Props {
+  short?: boolean
+  class?: string
+}
+
+const { short = false, class: className } = Astro.props
+---
+
+<Notice title="Need help with your licence?" class={className}>
+  We are <b>not</b> the <a class="link" href={cfp.url} target="_blank" rel="noreferrer">Canadian Firearms Program (CFP)</a>.
+  {short ? 'For licence or application questions' : 'For questions about licences, the law, or applications'}, call <a class="link" href={cfp.phoneHref}>{cfp.phoneDisplay}</a>.
+</Notice>

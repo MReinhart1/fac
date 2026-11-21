@@ -1,0 +1,43 @@
+{
+  "name": "fac",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "oxlint",
+    "db:setup": "node --env-file=.env scripts/db-setup.mjs",
+    "staff:create": "node --env-file=.env scripts/create-staff.mjs",
+    "deploy": "astro build && wrangler deploy",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:server": "node e2e/server.mjs"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.4.9",
+    "@astrojs/react": "^7.1.9",
+    "@astrojs/sitemap": "^3.7.6",
+    "@better-auth/mongo-adapter": "^1.7.26",
+    "@lucide/astro": "^1.76.0",
+    "@tailwindcss/vite": "^4.3.5",
+    "astro": "^7.4.13",
+    "better-auth": "^1.7.26",
+    "mongodb": "^7.9.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "mongodb-memory-server": "^11.3.0",
+    "oxlint": "^1.94.0",
+    "wrangler": "^4.165.0"
+  }
+}

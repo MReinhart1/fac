@@ -1,0 +1,24 @@
+---
+import RegisterForm from '../components/forms/RegisterForm.jsx'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { loadPublicSessions } from '../lib/public-sessions.js'
+
+export const prerender = false
+
+const { sessions, unavailable } = await loadPublicSessions()
+Astro.response.headers.set('Cache-Control', 'no-store')
+const dateOptions = sessions.map(({ id, start, label, full, seatsLeft }) => ({ id, start, label, full, seatsLeft }))
+---
+
+<BaseLayout
+  title="Register"
+  description="Register for a CFSC or CRFSC firearms safety course in Toronto."
+  eyebrow="Registration"
+  heading="Register for a course"
+>
+  <Fragment slot="intro">
+    All courses must be prepaid. If you are paying for more than one person, complete a form for each person. Your booking is not confirmed until
+    payment is received and processed.
+  </Fragment>
+  <RegisterForm client:load sessions={dateOptions} unavailable={unavailable} />
+</BaseLayout>

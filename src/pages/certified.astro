@@ -1,0 +1,48 @@
+---
+import ArrowRight from '@lucide/astro/icons/arrow-right'
+import BadgeCheck from '@lucide/astro/icons/badge-check'
+import Rings from '../components/Rings.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { FSESO_URL } from '../data/site.js'
+---
+
+<BaseLayout
+  title="FSESO Certified Instructors"
+  description="Why you should take your firearms safety course from a Chief Firearms Office designated FSESO instructor."
+  eyebrow="FSESO Certified"
+  heading="Train with a designated instructor"
+>
+  <Fragment slot="intro">Choose a Chief Firearms Office-certified instructor and examiner for your firearms safety training.</Fragment>
+
+  <section class="card grid overflow-hidden nav:grid-cols-[300px_1fr]">
+    <div class="relative grid min-h-[200px] place-items-center overflow-hidden bg-navy">
+      <Rings class="size-[420px] text-steel/20" />
+      <span class="relative grid size-32 place-items-center rounded-full border-4 border-steel bg-navy-deep text-center text-cream">
+        <BadgeCheck size={30} class="mx-auto text-steel" />
+        <span class="-mt-6 font-display text-xl font-extrabold tracking-[0.06em]">FSESO</span>
+      </span>
+    </div>
+    <div class="p-7 nav:p-10">
+      <h2 class="section-title text-[28px]">Why certification matters</h2>
+      <div class="mt-4 grid gap-3.5 body-text">
+        <p>
+          There are companies and individuals, not associated with the FSESO, who advertise online to provide firearms safety training courses.
+          These persons are not certified by the Chief Firearms Office of Ontario to teach and test the Canadian Firearms Safety Courses.
+        </p>
+        <p>
+          You should ensure you are dealing only with a Chief Firearms Office certified firearms instructor and examiner before registering for
+          any courses or examinations. Ask the instructor or examiner if they are designated by the Chief Firearms Office of Ontario to be a
+          firearms instructor and/or examiner.
+        </p>
+        <p>
+          FSESO instructors are the only firearms safety instructors approved by the Chief Firearms Office of Ontario to instruct or provide
+          testing for these courses for the purposes of an individual wishing to obtain their PAL.
+        </p>
+      </div>
+      <div class="mt-7 flex flex-wrap gap-3">
+        <a class="btn" href="/register">Register with us</a>
+        <a class="btn btn-outline" href={FSESO_URL} target="_blank" rel="noreferrer">Find an FSESO instructor <ArrowRight size={18} /></a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

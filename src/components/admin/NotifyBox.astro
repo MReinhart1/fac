@@ -1,0 +1,12 @@
+---
+// "Email the student" checkbox on owner actions, ticked by default.
+interface Props {
+  label: string
+}
+const { label } = Astro.props
+---
+
+<label class="flex items-center gap-2.5 text-sm font-semibold">
+  <input class="size-4 accent-red" type="checkbox" name="notify" checked />
+  {label}
+</label>

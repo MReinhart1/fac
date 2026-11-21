@@ -1,0 +1,188 @@
+---
+import StatusPill from '../../../components/admin/StatusPill.astro'
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+import { money } from '../../../data/courses.js'
+import { actorOf, canSee, isOwner, listStaff, messageFor, readForm, redirectWith, roleLabel } from '../../../lib/admin.js'
+import { getAuth } from '../../../lib/auth.js'
+import { store } from '../../../lib/db.js'
+import { refreshDatePages } from '../../../lib/public-sessions.js'
+import { StoreError } from '../../../lib/store.js'
+
+export const prerender = false
+
+const user = Astro.locals.user
+const owner = isOwner(user)
+const id = Astro.params.id ?? ''
+const here = `/admin/sessions/${id}`
+const data = store()
+
+let weekend
+try {
+  weekend = await data.getSession(id)
+} catch (error) {
+  if (error instanceof StoreError && error.code === 'not_found') return new Response('Course weekend not found.', { status: 404 })
+  throw error
+}
+if (!canSee(user, weekend)) return new Response('You are not assigned to this weekend.', { status: 403 })
+
+if (Astro.request.method === 'POST') {
+  if (!owner) return new Response('Only the owner can change course weekends.', { status: 403 })
+  const form = await Astro.request.formData()
+  const capacity = Number(form.get('capacity'))
+  const status = String(form.get('status') ?? '')
+  try {
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 200) throw new StoreError('invalid', 'Seats must be a whole number between 1 and 200.')
+    if (!['open', 'closed', 'cancelled'].includes(status)) throw new StoreError('invalid', 'Choose a status.')
+    await data.updateSession(
+      id,
+      {
+        capacity,
+        status,
+        notes: String(form.get('notes') ?? '').trim().slice(0, 500),
+        instructorIds: form.getAll('instructorIds').map(String),
+      },
+      actorOf(user),
+    )
+    await refreshDatePages(Astro.cache)
+    return redirectWith(Astro.redirect, here, 'Weekend updated.')
+  } catch (error) {
+    return redirectWith(Astro.redirect, here, messageFor(error), 'error')
+  }
+}
+
+const roster = await data.listRoster(id)
+const active = roster.filter((reg) => reg.status === 'pending' || reg.status === 'paid')
+const inactive = roster.filter((reg) => !active.includes(reg))
+const staff = owner ? await listStaff(getAuth(), Astro.request.headers) : []
+const outstanding = active.filter((reg) => reg.status === 'pending').reduce((sum, reg) => sum + reg.amountDueCents, 0)
+
+const th = 'px-3 py-2.5'
+const td = 'px-3 py-2.5 align-top'
+---
+
+<AdminLayout title={weekend.label}>
+  <p class="-mt-4 mb-6 text-muted">
+    {weekend.seatsTaken} of {weekend.capacity} seats taken · <span class="capitalize">{weekend.status}</span>
+    {owner && outstanding > 0 && <> · {money(outstanding)} outstanding</>}
+  </p>
+
+  {
+    owner && (
+      <details class="card mb-8 p-5 print:hidden">
+        <summary class="cursor-pointer font-display font-bold">Edit weekend (seats, status, instructors)</summary>
+        <form method="post" class="mt-4 grid gap-4 sm:grid-cols-2">
+          <label class="field-label">
+            Seats
+            <input class="field" type="number" name="capacity" min="1" max="200" value={weekend.capacity} required />
+          </label>
+          <label class="field-label">
+            Status
+            <select class="field" name="status">
+              <option value="open" selected={weekend.status === 'open'}>Open for registration</option>
+              <option value="closed" selected={weekend.status === 'closed'}>Closed (shows as Full)</option>
+              <option value="cancelled" selected={weekend.status === 'cancelled'}>Cancelled (hidden from the site)</option>
+            </select>
+          </label>
+          <fieldset class="sm:col-span-2">
+            <legend class="field-label mb-2">Instructors teaching this weekend</legend>
+            <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              {staff.map((member) => (
+                <label class="flex items-center gap-2">
+                  <input class="size-4 accent-red" type="checkbox" name="instructorIds" value={member.id} checked={weekend.instructorIds.includes(member.id)} />
+                  {member.name} <span class="text-muted">({roleLabel(member.role)})</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label class="field-label sm:col-span-2">
+            Notes (staff only)
+            <textarea class="field" name="notes" rows="2" maxlength="500">{weekend.notes}</textarea>
+          </label>
+          <p class="small-note mt-0 sm:col-span-2">
+            Cancelling a weekend hides it from the website but does not cancel its registrations: move or cancel each student below.
+          </p>
+          <div>
+            <button class="btn btn-navy" type="submit">Save changes</button>
+          </div>
+        </form>
+      </details>
+    )
+  }
+
+  <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+    <h2 class="card-heading mb-0">Class list ({active.length})</h2>
+    <button class="btn btn-outline min-h-10 print:hidden" type="button" data-print>Print sign-in sheet</button>
+  </div>
+  <div class="card overflow-x-auto print:border-0">
+    <table class="w-full min-w-[720px] text-left text-sm">
+      <thead class="border-b border-line text-xs tracking-[0.08em] text-muted uppercase">
+        <tr>
+          <th class={th}>Student</th>
+          <th class={th}>Package</th>
+          <th class={th}>Payment</th>
+          <th class={th}>Guide</th>
+          <th class={th}>Sit with</th>
+          <th class={th}>Consent form</th>
+          <th class:list={[th, 'hidden print:table-cell']}>Signature</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {
+          active.map((reg) => (
+            <tr class="hover:bg-paper">
+              <td class={td}>
+                <a class="link print:no-underline print:text-navy" href={`/admin/registrations/${reg._id}`}>
+                  {reg.student.familyName}, {reg.student.firstName}
+                </a>
+                {reg.student.nickname && <span class="text-muted"> ({reg.student.nickname})</span>}
+                <div class="text-xs text-muted print:hidden">
+                  {reg.student.phone} · {reg.student.email}
+                </div>
+              </td>
+              <td class={td}>{reg.packageTitle}</td>
+              <td class={td}>
+                <StatusPill status={reg.status} />
+                {owner && <div class="mt-1 text-xs text-muted">{money(reg.amountDueCents)} · {reg.reference}</div>}
+              </td>
+              <td class={td}>{reg.hasGuide ? 'Has own' : 'Needs guide'}</td>
+              <td class={td}>{reg.friendName || '—'}</td>
+              <td class={td}>{reg.consentReceived ? 'Received' : '—'}</td>
+              <td class:list={[td, 'hidden w-48 print:table-cell']} />
+            </tr>
+          ))
+        }
+        {
+          active.length === 0 && (
+            <tr>
+              <td class="px-3 py-6 text-muted" colspan="7">
+                Nobody is registered yet.
+              </td>
+            </tr>
+          )
+        }
+      </tbody>
+    </table>
+  </div>
+
+  {
+    inactive.length > 0 && (
+      <details class="mt-6 print:hidden">
+        <summary class="cursor-pointer text-sm font-semibold">Cancelled or expired ({inactive.length})</summary>
+        <ul class="card mt-3 divide-y divide-line text-sm">
+          {inactive.map((reg) => (
+            <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <a class="link" href={`/admin/registrations/${reg._id}`}>
+                {reg.student.familyName}, {reg.student.firstName}
+              </a>
+              <StatusPill status={reg.status} />
+            </li>
+          ))}
+        </ul>
+      </details>
+    )
+  }
+</AdminLayout>
+
+<script>
+  document.querySelector('[data-print]')?.addEventListener('click', () => window.print())
+</script>

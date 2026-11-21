@@ -1,0 +1,31 @@
+---
+// A native <details> accordion with a "+" that turns into "×" when open.
+interface Props {
+  summary: string
+  open?: boolean
+  class?: string
+  summaryClass?: string
+  iconClass?: string
+}
+
+const { summary, open = false, class: className, summaryClass, iconClass } = Astro.props
+---
+
+<details class:list={['group', className]} open={open}>
+  <summary
+    class:list={[
+      'flex cursor-pointer list-none items-center justify-between gap-5 font-bold [&::-webkit-details-marker]:hidden',
+      summaryClass,
+    ]}
+  >
+    {summary}
+    <span
+      class:list={[
+        'grid size-7 shrink-0 place-items-center rounded-full text-lg leading-none transition-transform group-open:rotate-45',
+        iconClass,
+      ]}
+      aria-hidden="true">+</span
+    >
+  </summary>
+  <slot />
+</details>

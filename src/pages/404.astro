@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+
+<BaseLayout title="Page not found" eyebrow="404" heading="Page not found">
+  <Fragment slot="intro">That page doesn't exist or has moved.</Fragment>
+  <div class="flex flex-wrap gap-3">
+    <a class="btn" href="/">Go to the home page</a>
+    <a class="btn btn-outline" href="/dates">See course dates</a>
+  </div>
+</BaseLayout>
