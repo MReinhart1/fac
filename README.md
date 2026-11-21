@@ -184,7 +184,8 @@ enough for checking staff passwords at sign-in.
 
    Repeat for `BETTER_AUTH_SECRET`, `CRON_SECRET` and, when email is ready, `RESEND_API_KEY`, `EMAIL_FROM`,
    `EMAIL_REPLY_TO`, `OWNER_NOTIFY_EMAIL`. `MONGODB_DB` and `BETTER_AUTH_URL` are set in `wrangler.jsonc`.
-3. `npm run deploy` builds the site and uploads it. (Cloudflare's Workers Builds can instead deploy on every Git push.)
+3. Deploys normally happen on GitHub (see below). `npm run deploy` still builds and uploads straight from your computer
+   when needed.
 4. Add `firearmsacademy.ca` as a custom domain on the Worker. The domain's DNS must be on Cloudflare: copy all
    existing records, especially MX (email), before switching nameservers.
 
@@ -199,6 +200,27 @@ Two things to know when working on the site:
   Two small files in `src/shims/` keep the MongoDB driver happy there. `whatwg-url.js` stands in for a driver
   dependency that can't load in workerd. `process.js`, used by `astro dev` only, avoids a harmless but noisy
   "no match for module: node:process" error.
+
+### Automatic tests and deploys (GitHub Actions)
+
+`.github/workflows/ci.yml` runs on GitHub:
+- **Every pull request:** lint, unit tests and end-to-end tests. The result shows on the pull request.
+- **Every merge (push) to `main`:** the same checks, then, only if they all pass, a build and `wrangler deploy` to
+  Cloudflare. The run appears under the repository's **Actions** tab, and the deploy under the **production** environment.
+
+One-time setup:
+1. **Cloudflare API token.** In the Cloudflare dashboard, go to My Profile → API Tokens → Create Token, and use the
+   **Edit Cloudflare Workers** template for your account.
+2. **GitHub secrets.** In GitHub, go to Settings → Secrets and variables → Actions → New repository secret, and add:
+   - `CLOUDFLARE_API_TOKEN`: the token from step 1;
+   - `CLOUDFLARE_ACCOUNT_ID`: shown on the Workers & Pages overview page in Cloudflare.
+3. **Protect `main` (recommended).** In GitHub, go to Settings → Branches → Add rule for `main`, then tick
+   "Require a pull request before merging" and "Require status checks to pass", choosing **Lint and test**. Changes
+   then reach the live site only through a pull request with passing tests.
+
+Don't also connect Cloudflare's own Git integration (Workers Builds): the site would deploy twice on every push, and
+without waiting for the tests. If a test fails on GitHub, open the failed run: a `playwright-report` download holds
+screenshots and a trace of each failed browser test.
 
 ## Roadmap
 

@@ -1,0 +1,103 @@
+# Pull requests: lint, unit tests and end-to-end tests.
+# Merge (push) to main: the same tests, then deploy the site to Cloudflare if they pass.
+#
+# Deploying needs two repository secrets (GitHub → Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN   a Cloudflare API token from the "Edit Cloudflare Workers" template
+#   CLOUDFLARE_ACCOUNT_ID  the Cloudflare account ID
+# The site's own secrets (MONGODB_URI, BETTER_AUTH_SECRET, …) stay stored in Cloudflare; deploys keep them.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# One run per branch at a time; a newer push cancels an older test run, but never a deploy in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24
+  # Where mongodb-memory-server keeps the MongoDB binary it downloads for the tests (cached between runs).
+  MONGOMS_DOWNLOAD_DIR: /home/runner/.cache/mongodb-binaries
+  WRANGLER_SEND_METRICS: false
+
+jobs:
+  test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache the test MongoDB and Playwright browser
+        uses: actions/cache@v6
+        with:
+          path: |
+            /home/runner/.cache/mongodb-binaries
+            /home/runner/.cache/ms-playwright
+          key: test-tools-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Install the Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Keep the Playwright report when tests fail
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: https://firearms-academy.michaelreinhart112.workers.dev
+    env:
+      # The deploy does not run the tests, so skip downloading the test MongoDB.
+      MONGOMS_DISABLE_POSTINSTALL: 1
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
