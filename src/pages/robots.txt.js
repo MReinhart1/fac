@@ -1,11 +1,11 @@
-// /robots.txt, built from the site's address in astro.config.mjs. The site's own domain (LIVE_DOMAIN) invites search
-// engines; any other address asks them to stay away (BaseLayout adds a matching "noindex" tag to every page).
-import { LIVE_DOMAIN } from '../data/site.js'
+// /robots.txt. When search engines may list the site (allowSearchEngines and LIVE_DOMAIN in src/data/site.js), it
+// points them to the sitemap. Otherwise it still lets them read the pages, on purpose: each page carries a "noindex"
+// tag (BaseLayout), and a crawler that is blocked from a page never sees that tag, so it could list the address anyway.
+import { allowSearchEngines, LIVE_DOMAIN } from '../data/site.js'
 
 export function GET({ site }) {
-  const live = site?.hostname === LIVE_DOMAIN
-  const body = live
-    ? `User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: ${new URL('/sitemap-index.xml', site)}\n`
-    : 'User-agent: *\nDisallow: /\n'
-  return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  const indexable = allowSearchEngines && site?.hostname === LIVE_DOMAIN
+  const lines = ['User-agent: *', 'Allow: /', 'Disallow: /admin']
+  if (indexable) lines.push('', `Sitemap: ${new URL('/sitemap-index.xml', site)}`)
+  return new Response(`${lines.join('\n')}\n`, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
 }

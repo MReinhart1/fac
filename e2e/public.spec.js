@@ -75,13 +75,15 @@ test('the privacy policy is linked from the footer and both forms', async ({ pag
   }
 })
 
-test('search engines may index the site on its own domain', async ({ page, request }) => {
-  // The tests build the site for its real address (SITE_URL in astro.config.mjs, LIVE_DOMAIN in src/data/site.js).
+test('search engines are asked not to list the demo site', async ({ page, request }) => {
+  // allowSearchEngines is off in src/data/site.js. Crawlers may read the pages (so they see the noindex tag)
+  // but are not pointed to a sitemap.
   const robots = await (await request.get('/robots.txt')).text()
   expect(robots).toContain('Allow: /')
   expect(robots).toContain('Disallow: /admin')
-  expect(robots).toContain('Sitemap: https://mreinhart-fac-demo.com/sitemap-index.xml')
-  await page.goto('/')
-  await expect(page.locator('meta[name="robots"]')).toHaveCount(0)
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://mreinhart-fac-demo.com/')
+  expect(robots).not.toContain('Sitemap:')
+  for (const path of ['/', '/dates', '/register', '/privacy']) {
+    await page.goto(path)
+    await expect(page.locator('meta[name="robots"]'), path).toHaveAttribute('content', 'noindex, nofollow')
+  }
 })

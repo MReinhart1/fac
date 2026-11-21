@@ -242,9 +242,10 @@ Cloudflare issues the HTTPS certificate. The domain is set in four places that m
 
 Left to do:
 
-1. Submit the sitemap (https://mreinhart-fac-demo.com/sitemap-index.xml) in Google Search Console.
-2. Add a `www` redirect if wanted (Cloudflare → Rules → Redirect Rules, "Redirect from WWW to root").
-3. Update any links that point people to the old website.
+1. Add a `www` redirect if wanted (Cloudflare → Rules → Redirect Rules, "Redirect from WWW to root").
+
+The site is a demo, so search engines are asked not to list it (`allowSearchEngines` in `src/data/site.js` is off; every
+page carries a `noindex` tag).
 
 ## Later
 

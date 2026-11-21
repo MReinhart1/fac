@@ -191,10 +191,11 @@ enough for checking staff passwords at sign-in.
    and `routes` in `wrangler.jsonc`. On deploy, Cloudflare creates the domain's DNS record and HTTPS certificate (the
    domain's DNS must be on Cloudflare). The `workers.dev` address is turned off, so the site has one address.
 
-**Search engines.** The site runs at https://mreinhart-fac-demo.com, which is also `LIVE_DOMAIN` in `src/data/site.js`.
-On that domain `/robots.txt` invites search engines (except to `/admin`) and points them to the sitemap. Served from
-any other address, such as a preview or test copy, `/robots.txt` and a `noindex` tag on every page keep it out of
-search results. If the domain ever changes, update `LIVE_DOMAIN` along with the three settings above.
+**Search engines.** The site runs at https://mreinhart-fac-demo.com (`LIVE_DOMAIN` in `src/data/site.js`; update it
+along with the three settings above if the domain changes). It is a demo, so `allowSearchEngines` in the same file is
+off: every page carries a `noindex` tag, and `/robots.txt` lists no sitemap. Crawlers may still read the pages, on
+purpose, because a crawler blocked by robots.txt never sees the `noindex` tag and could list the address anyway.
+Turning `allowSearchEngines` on (only for a real launch on the business's own domain) lets search engines list it.
 
 Old `.php` URLs are listed under `redirects` in `astro.config.mjs`; the build turns them into a `_redirects` file that
 Cloudflare serves as real 301s. The home and dates pages are cached at Cloudflare's edge for 60 seconds and refreshed

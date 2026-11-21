@@ -3,6 +3,11 @@
 // The site's domain. On any other address (a preview or test copy) the site asks search engines not to index it.
 export const LIVE_DOMAIN = 'mreinhart-fac-demo.com'
 
+// Whether search engines may list the site. Off: this is a demo, and it should not show up in search results where
+// people could mistake it for the real business. Every page then carries a "noindex" tag. Turn it on only for a real
+// launch on the business's own domain.
+export const allowSearchEngines = false
+
 export const site = {
   name: 'Firearms Academy Canada',
   shortName: 'FAC',
