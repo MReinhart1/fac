@@ -22,8 +22,27 @@ const WEEKENDS = {
   closed: { startDate: saturdayAfter(63), capacity: 20, status: 'closed' },
 }
 
+// Staff logins a test added are removed, and the two standard ones are put back as they started (role, access).
+async function resetStaff(db) {
+  const keepEmails = Object.values(STAFF).map((person) => person.email)
+  const extra = await db.collection('user').find({ email: { $nin: keepEmails } }, { projection: { _id: 1 } }).toArray()
+  if (extra.length) {
+    const ids = extra.map((user) => user._id)
+    await db.collection('user').deleteMany({ _id: { $in: ids } })
+    await db.collection('account').deleteMany({ userId: { $in: ids } })
+    await db.collection('session').deleteMany({ userId: { $in: ids } })
+  }
+  for (const person of Object.values(STAFF)) {
+    await db.collection('user').updateOne(
+      { email: person.email },
+      { $set: { role: person.role === 'owner' ? 'admin' : 'user', banned: false }, $unset: { banReason: '', banExpires: '' } },
+    )
+  }
+}
+
 async function resetDatabase(db) {
   await Promise.all(['registrations', 'messages', 'emailLog', 'auditLog'].map((name) => db.collection(name).deleteMany({})))
+  await resetStaff(db)
   const sessions = db.collection('courseSessions')
   const keep = Object.values(WEEKENDS).map((w) => w.startDate)
   await sessions.deleteMany({ startDate: { $nin: keep } })

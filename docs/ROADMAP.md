@@ -26,7 +26,8 @@ is a demo, so search engines are asked not to list it. What is left is mostly th
 
 Done: database and indexes, staff logins, Atlas network access, hosting on Cloudflare Workers, the domain with HTTPS,
 email from the domain (verified in Resend), GitHub repository with automatic tests and deploys, privacy policy draft,
-security headers, and accessibility and SEO checks in the test suite.
+security headers, accessibility and SEO checks in the test suite, staff management and password change in the portal,
+and add-to-calendar in course emails.
 
 ## Booking and payment rules
 
@@ -101,7 +102,6 @@ Roughly in order of usefulness; none blocks launch.
 
 | Item | What it adds |
 | --- | --- |
-| Staff page | Owner adds, removes and resets instructor logins in the portal instead of the command line |
 | Two-factor login | Extra protection for the owner account |
 | Waitlist | Full weekends take waitlist sign-ups; a "seat open" email goes out when a seat frees up |
 | Policy helpers | Portal suggests the refund or reschedule fee from the cancellation policy; owner confirms |

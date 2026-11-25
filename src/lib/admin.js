@@ -68,3 +68,16 @@ export async function listStaff(auth, headers) {
 
 /** Can this user see this course weekend? Owners see all; instructors only weekends they are assigned to. */
 export const canSee = (user, weekend) => isOwner(user) || weekend.instructorIds.includes(user.id)
+
+// Letters and digits that are easy to read out and type: no 0/O, 1/l/I.
+const PASSWORD_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+
+/**
+ * A temporary password for a new or reset staff login, e.g. "Qm7k-Xw4p-9Tzr-Hc2e": 16 random characters in groups of
+ * four, easy to read out over the phone. The person changes it on /admin/account after signing in.
+ */
+export function temporaryPassword() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  const chars = Array.from(bytes, (byte) => PASSWORD_ALPHABET[byte % PASSWORD_ALPHABET.length])
+  return [0, 4, 8, 12].map((start) => chars.slice(start, start + 4).join('')).join('-')
+}

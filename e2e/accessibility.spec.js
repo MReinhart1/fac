@@ -103,7 +103,7 @@ test('the staff portal passes the accessibility check', async ({ page, request, 
   problems.push(...(await violations(page, '/admin/login error: ')))
 
   await signIn('owner')
-  for (const path of ['/admin', '/admin/sessions', `/admin/sessions/${weekends.open.id}`, `/admin/registrations/${id}`, '/admin/payments', '/admin/messages', '/admin/emails']) {
+  for (const path of ['/admin', '/admin/sessions', `/admin/sessions/${weekends.open.id}`, `/admin/registrations/${id}`, '/admin/payments', '/admin/messages', '/admin/emails', '/admin/staff', '/admin/account']) {
     await page.goto(path)
     problems.push(...(await violations(page, `${path}: `)))
   }
@@ -131,7 +131,7 @@ test('the instructor view passes the accessibility check', async ({ page, db, si
   await db.collection('courseSessions').updateOne({ startDate: weekends.open.startDate }, { $set: { instructorIds: [instructor._id.toString()] } })
   await signIn('instructor')
   const problems = []
-  for (const path of ['/admin', '/admin/sessions', `/admin/sessions/${weekends.open.id}`, `/admin/registrations/${id}`]) {
+  for (const path of ['/admin', '/admin/sessions', `/admin/sessions/${weekends.open.id}`, `/admin/registrations/${id}`, '/admin/account']) {
     await page.goto(path)
     problems.push(...(await violations(page, `${path}: `)))
   }

@@ -1,5 +1,5 @@
 // Fills the TEST database with realistic sample data, so every screen of the site and staff portal has something to show.
-// Usage: npm run db:seed-test   (uses MONGODB_URI and MONGODB_DB from .env)
+// Usage: npm run db:seed-test   (uses MONGODB_URI from .env, and MONGODB_DB or fac_test)
 //
 // It wipes and refills the test database's weekends, registrations, messages, email log and audit log, and creates
 // three test staff logins (listed in TEST_STAFF below). Dates are relative to today, so the data always looks current.
@@ -10,11 +10,13 @@ import { addDaysTo, isSaturday, todayInToronto } from '../src/data/dates.js'
 import { createAuth, ROLES } from '../src/lib/auth-config.js'
 import { ensureIndexes, getClient, getDb } from '../src/lib/mongo.js'
 import { makePaymentReference } from '../src/lib/paymentReference.js'
+import { scriptDatabase } from './database.mjs'
 
 const uri = process.env.MONGODB_URI
-const dbName = process.env.MONGODB_DB
-if (!dbName || dbName === 'fac' || !/test/i.test(dbName)) {
-  console.error(`Refusing to seed "${dbName ?? '(no MONGODB_DB)'}": this script only fills a test database (a name containing "test").`)
+const dbName = scriptDatabase()
+// Never the live database, even on GitHub: only a database whose name contains "test".
+if (!/test/i.test(dbName)) {
+  console.error(`Refusing to seed "${dbName}": this script only fills a test database (a name containing "test").`)
   process.exit(1)
 }
 

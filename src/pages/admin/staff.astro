@@ -1,0 +1,203 @@
+---
+// /admin/staff — the owner adds staff logins, changes roles, resets passwords and turns access off and on.
+// New and reset passwords are shown once, on this page only (never emailed or put in the address bar); the person
+// changes theirs on /admin/account. The owner cannot change their own login here, so there is always an owner.
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { actorOf, formatDateTime, isOwner, listStaff, readForm, redirectWith, roleLabel, temporaryPassword } from '../../lib/admin.js'
+import { getAuth } from '../../lib/auth.js'
+import { ROLES } from '../../lib/auth-config.js'
+import { store } from '../../lib/db.js'
+
+export const prerender = false
+
+const user = Astro.locals.user
+if (!isOwner(user)) return new Response('Only the owner can manage staff.', { status: 403 })
+
+const auth = getAuth()
+const headers = Astro.request.headers
+const here = '/admin/staff'
+let error = ''
+let errorFor = ''
+/** Shown once after creating a login or resetting a password: { name, email, password, created }. */
+let shown = null
+
+const MESSAGES = {
+  USER_ALREADY_EXISTS: 'There is already a login with that email address.',
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'There is already a login with that email address.',
+  INVALID_EMAIL: 'Please enter a valid email address.',
+  YOU_CANNOT_BAN_YOURSELF: 'You cannot turn off your own access.',
+}
+const problem = (err) => MESSAGES[err?.body?.code] ?? 'Something went wrong. Please try again.'
+
+if (Astro.request.method === 'POST') {
+  const form = await readForm(Astro.request)
+  const actor = actorOf(user)
+  const audit = (action, id, details) => store().audit(actor, action, { type: 'user', id }, details)
+  const staff = form.userId ? (await listStaff(auth, headers)).find((member) => member.id === form.userId) : null
+
+  try {
+    if (form.action === 'create') {
+      const name = (form.name ?? '').slice(0, 80)
+      const email = (form.email ?? '').toLowerCase()
+      const role = form.role === 'owner' ? 'owner' : 'instructor'
+      errorFor = 'create'
+      if (!name) throw Object.assign(new Error('name'), { body: { code: 'NAME' } })
+      const password = temporaryPassword()
+      const { user: created } = await auth.api.createUser({ body: { email, name, password, role: ROLES[role] }, headers })
+      await audit('staff.create', created.id, { email, role })
+      shown = { name, email, password, created: true }
+    } else {
+      // Every other action is on someone else's existing login.
+      if (!staff) return redirectWith(Astro.redirect, here, 'That login no longer exists.', 'error')
+      if (staff.id === user.id) return redirectWith(Astro.redirect, here, 'You cannot change your own login here. Use Your account.', 'error')
+
+      if (form.action === 'role') {
+        const role = form.role === 'owner' ? 'owner' : 'instructor'
+        await auth.api.setRole({ body: { userId: staff.id, role: ROLES[role] }, headers })
+        await audit('staff.role', staff.id, { role })
+        return redirectWith(Astro.redirect, here, `${staff.name} is now ${role === 'owner' ? 'an owner' : 'an instructor'}.`)
+      }
+      if (form.action === 'disable') {
+        await auth.api.banUser({ body: { userId: staff.id, banReason: 'Access turned off by the owner' }, headers })
+        await audit('staff.disable', staff.id, {})
+        return redirectWith(Astro.redirect, here, `${staff.name} can no longer sign in, and has been signed out everywhere.`)
+      }
+      if (form.action === 'enable') {
+        await auth.api.unbanUser({ body: { userId: staff.id }, headers })
+        await audit('staff.enable', staff.id, {})
+        return redirectWith(Astro.redirect, here, `${staff.name} can sign in again.`)
+      }
+      if (form.action === 'reset') {
+        const password = temporaryPassword()
+        await auth.api.setUserPassword({ body: { userId: staff.id, newPassword: password }, headers })
+        await auth.api.revokeUserSessions({ body: { userId: staff.id }, headers })
+        await audit('staff.password-reset', staff.id, {})
+        shown = { name: staff.name, email: staff.email, password, created: false }
+      } else {
+        return redirectWith(Astro.redirect, here, 'Unknown action.', 'error')
+      }
+    }
+  } catch (err) {
+    error = err?.body?.code === 'NAME' ? 'Please enter a name.' : problem(err)
+    if (!MESSAGES[err?.body?.code] && err?.body?.code !== 'NAME') console.error('[staff]', err)
+  }
+}
+
+const members = (await listStaff(auth, headers)).toSorted((a, b) => Number(b.role === ROLES.owner) - Number(a.role === ROLES.owner) || a.name.localeCompare(b.name))
+---
+
+<AdminLayout title="Staff">
+  {
+    shown && (
+      <section class="card mb-6 border-navy p-5" role="status" aria-labelledby="shown-heading">
+        <h2 id="shown-heading" class="card-heading">{shown.created ? `Login created for ${shown.name}` : `New password for ${shown.name}`}</h2>
+        <p class="body-text text-sm">
+          Give {shown.name} this temporary password privately, by phone or text rather than email. They sign in at{' '}
+          <b>{Astro.url.origin}/admin</b> with <b>{shown.email}</b>, then change it under <b>Your account</b>.
+        </p>
+        <p class="mt-3 rounded-lg bg-paper px-4 py-3 font-mono text-xl font-bold tracking-wide" data-temporary-password>{shown.password}</p>
+        <p class="small-note">This is the only time it is shown. If it is lost, reset the password again.</p>
+      </section>
+    )
+  }
+
+  <form method="post" class="card mb-8 grid gap-4 p-5 sm:grid-cols-[1fr_1.3fr_auto_auto] sm:items-end" aria-labelledby="add-heading">
+    <h2 id="add-heading" class="card-heading mb-0 sm:col-span-4">Add a staff login</h2>
+    <input type="hidden" name="action" value="create" />
+    <label class="field-label">
+      Name
+      <input class="field" name="name" required maxlength="80" autocomplete="off" />
+    </label>
+    <label class="field-label">
+      Email
+      <input class="field" type="email" name="email" required maxlength="200" autocomplete="off" />
+    </label>
+    <label class="field-label">
+      Role
+      <select class="field" name="role">
+        <option value="instructor">Instructor</option>
+        <option value="owner">Owner</option>
+      </select>
+    </label>
+    <button class="btn btn-navy" type="submit">Add login</button>
+    {errorFor === 'create' && error && <p class="rounded-lg bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-ink sm:col-span-4" role="alert">{error}</p>}
+    <p class="small-note mt-0 sm:col-span-4">
+      Owners see and change everything. Instructors see only the weekends they are assigned to, without payment amounts. A temporary
+      password is shown once after adding.
+    </p>
+  </form>
+  {errorFor !== 'create' && error && <p class="mb-5 rounded-lg bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-ink" role="alert">{error}</p>}
+
+  <h2 class="card-heading">Staff logins ({members.length})</h2>
+  <ul class="grid gap-4">
+    {
+      members.map((member) => {
+        const self = member.id === user.id
+        return (
+          <li class:list={['card p-5', { 'opacity-75': member.banned }]}>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p class="font-semibold">
+                  {member.name}
+                  {self && <span class="text-muted"> (you)</span>}
+                </p>
+                <p class="text-sm text-muted">
+                  {member.email} · {roleLabel(member.role)}
+                  {member.banned ? ' · Access turned off' : ''} · Added {formatDateTime(member.createdAt)}
+                </p>
+              </div>
+              {self ? (
+                <a class="link text-sm" href="/admin/account">Change your password</a>
+              ) : (
+                <div class="flex flex-wrap items-end gap-2">
+                  <form method="post" class="flex items-end gap-2">
+                    <input type="hidden" name="action" value="role" />
+                    <input type="hidden" name="userId" value={member.id} />
+                    <label class="field-label">
+                      Role
+                      <select class="field min-h-9 py-1.5" name="role" aria-label={`Role for ${member.name}`}>
+                        <option value="instructor" selected={member.role !== ROLES.owner}>Instructor</option>
+                        <option value="owner" selected={member.role === ROLES.owner}>Owner</option>
+                      </select>
+                    </label>
+                    <button class="btn btn-outline min-h-9 px-3 text-sm" type="submit" aria-label={`Save role for ${member.name}`}>Save</button>
+                  </form>
+                  <form method="post" data-confirm={`Reset the password for ${member.name}? Their current password stops working and they are signed out everywhere.`}>
+                    <input type="hidden" name="action" value="reset" />
+                    <input type="hidden" name="userId" value={member.id} />
+                    <button class="btn btn-outline min-h-9 px-3 text-sm" type="submit" aria-label={`Reset password for ${member.name}`}>Reset password</button>
+                  </form>
+                  <form
+                    method="post"
+                    data-confirm={member.banned ? '' : `Turn off access for ${member.name}? They are signed out everywhere and cannot sign in until you turn it back on.`}
+                  >
+                    <input type="hidden" name="action" value={member.banned ? 'enable' : 'disable'} />
+                    <input type="hidden" name="userId" value={member.id} />
+                    <button class="btn btn-outline min-h-9 px-3 text-sm" type="submit" aria-label={`${member.banned ? 'Turn access on' : 'Turn access off'} for ${member.name}`}>
+                      {member.banned ? 'Turn access on' : 'Turn access off'}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          </li>
+        )
+      })
+    }
+  </ul>
+  <p class="small-note">
+    Turning access off keeps the person's history (which weekends they taught, what they changed) but stops them signing in and sends them no
+    more class lists.
+  </p>
+</AdminLayout>
+
+<script>
+  // Ask before resetting a password or turning access off.
+  for (const form of document.querySelectorAll<HTMLFormElement>('form[data-confirm]')) {
+    form.addEventListener('submit', (event) => {
+      // A native confirm is the simplest accessible guard for these staff-only actions (as on the payments page).
+      // oxlint-disable-next-line no-alert
+      if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) event.preventDefault()
+    })
+  }
+</script>

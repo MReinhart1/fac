@@ -17,10 +17,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:server": "node e2e/server.mjs",
-    "db:setup": "node --env-file=.env scripts/db-setup.mjs",
-    "db:seed-test": "node --env-file=.env scripts/seed-test-data.mjs",
-    "staff:create": "node --env-file=.env scripts/create-staff.mjs",
-    "deploy": "astro build && wrangler deploy"
+    "db:setup": "node --env-file-if-exists=.env scripts/db-setup.mjs",
+    "db:seed-test": "node --env-file-if-exists=.env scripts/seed-test-data.mjs",
+    "staff:create": "node --env-file-if-exists=.env scripts/create-staff.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.9",
