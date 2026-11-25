@@ -69,9 +69,10 @@ Live database → Run workflow, then pick a task:
 - `setup`: create the indexes and add any missing starting weekends (`npm run db:setup`). A starting weekend deleted in
   the portal comes back, so only run it on a new database or after adding dates to `scripts/seed-dates.mjs`.
 - `add-staff` or `reset-password`: add a login, or set a new password and sign the person out everywhere. Use these when
-  no owner can sign in; otherwise owners do this on the portal's Staff page. Set the password first as the repository
-  secret `STAFF_PASSWORD` (at least 12 characters), then delete the secret once the person has it. The repository is
-  public, so the workflow's log is too: it never prints the password, and hides the email and name.
+  no owner can sign in; otherwise owners do this on the portal's Staff page. Type the new password (at least 12
+  characters) in the workflow's **Password** box, give it to the person privately, and have them change it under Your
+  account. The repository is public, so the workflow's log is too: it hides the password, email and name (they show as
+  `***`). The box itself is not hidden, so the password is visible on screen while you type it.
 
 It needs the repository secret `LIVE_MONGODB_URI` (the same connection string as Cloudflare's `MONGODB_URI` secret).
 
@@ -283,7 +284,7 @@ Two things to know when working on the site:
   test blocks the deploy.
 
 `.github/workflows/live-database.yml` (**Live database**) runs only when started by hand. See "Database and staff
-portal" for its tasks and the `LIVE_MONGODB_URI` and `STAFF_PASSWORD` secrets.
+portal" for its tasks, its Password box and the `LIVE_MONGODB_URI` secret.
 
 One-time setup:
 1. **Cloudflare API token.** In the Cloudflare dashboard, go to My Profile → API Tokens → Create Token, and use the

@@ -8,13 +8,16 @@
 #   add-staff       add a staff login (npm run staff:create). For normal use, owners do this on the portal's Staff page.
 #   reset-password  set a new password on a login and sign it out everywhere, e.g. when no owner can sign in.
 #
-# Repository secrets it needs (Settings → Secrets and variables → Actions):
-#   LIVE_MONGODB_URI  the live connection string (the same as the MONGODB_URI secret stored in Cloudflare)
-#   STAFF_PASSWORD    for add-staff and reset-password: the password to set, at least 12 characters. Set it just before
-#                     running, give it to the person privately, then delete the secret; they change it under Your account.
+# For add-staff and reset-password, type the new password (at least 12 characters) in the Password box. Give it to the
+# person privately; they change it under Your account after signing in.
 #
-# The repository is public, so this run's log is too: the workflow never prints a password, and hides the email and
-# name it is given.
+# Repository secret it needs (Settings → Secrets and variables → Actions):
+#   LIVE_MONGODB_URI  the live connection string (the same as the MONGODB_URI secret stored in Cloudflare)
+#
+# The repository is public, so this run's log is too. The first step hides the password, email and name before anything
+# else runs, so the log shows *** instead. The password is read straight from the run's event file, never placed in a
+# step's settings, because GitHub prints those settings in the log. GitHub's Run workflow form has no hidden text box,
+# so the password shows on screen while you type it.
 name: Live database
 
 on:
@@ -36,6 +39,9 @@ on:
         type: choice
         options: [instructor, owner]
         default: instructor
+      password:
+        description: Password to set, at least 12 characters (add-staff, reset-password). Hidden in the log.
+        type: string
 
 # One change to the live database at a time.
 concurrency:
@@ -53,21 +59,34 @@ jobs:
     env:
       MONGODB_DB: fac
       MONGODB_URI: ${{ secrets.LIVE_MONGODB_URI }}
-      # Inputs reach the commands as environment variables, never pasted into the script text.
-      STAFF_EMAIL: ${{ inputs.email }}
-      STAFF_NAME: ${{ inputs.name }}
+      # Inputs reach the commands as environment variables, never pasted into the script text. The password, email and
+      # name are not set here: GitHub prints a step's settings in the log, so the first step reads them from the run's
+      # event file, hides them, then passes them on (through $GITHUB_ENV), where later steps' settings show ***.
       STAFF_ROLE: ${{ inputs.role }}
       # These commands do not run the tests, so skip downloading the test MongoDB.
       MONGOMS_DISABLE_POSTINSTALL: 1
     steps:
-      - name: Hide the email and name in this public log
+      - name: Hide the password, email and name in this public log
         run: |
-          if [ -n "$STAFF_EMAIL" ]; then echo "::add-mask::$STAFF_EMAIL"; fi
-          if [ -n "$STAFF_NAME" ]; then echo "::add-mask::$STAFF_NAME"; fi
+          input() { jq -r --arg key "$1" '.inputs[$key] // ""' "$GITHUB_EVENT_PATH"; }
+          password="$(input password)"
+          for pair in "STAFF_PASSWORD=$password" "STAFF_EMAIL=$(input email)" "STAFF_NAME=$(input name)"; do
+            value="${pair#*=}"
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+              echo "$pair" >> "$GITHUB_ENV"
+            fi
+          done
           if [ -z "$MONGODB_URI" ]; then
             echo "::error::Add the LIVE_MONGODB_URI repository secret first."
             exit 1
           fi
+          if [ "$TASK" != setup ] && [ "${#password}" -lt 12 ]; then
+            echo "::error::Type a password of at least 12 characters in the Password box."
+            exit 1
+          fi
+        env:
+          TASK: ${{ inputs.task }}
 
       - uses: actions/checkout@v7
 
@@ -82,14 +101,11 @@ jobs:
         if: inputs.task == 'setup'
         run: npm run db:setup
 
+      # STAFF_PASSWORD, STAFF_EMAIL and STAFF_NAME come from the first step.
       - name: Add a staff login
         if: inputs.task == 'add-staff'
-        env:
-          STAFF_PASSWORD: ${{ secrets.STAFF_PASSWORD }}
         run: npm run staff:create -- --email "$STAFF_EMAIL" --name "$STAFF_NAME" --role "$STAFF_ROLE"
 
       - name: Reset a password
         if: inputs.task == 'reset-password'
-        env:
-          STAFF_PASSWORD: ${{ secrets.STAFF_PASSWORD }}
         run: npm run staff:create -- --email "$STAFF_EMAIL" --reset
