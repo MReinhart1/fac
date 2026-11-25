@@ -4,6 +4,7 @@ import { money } from '../../data/courses.js'
 import { weekendParts } from '../../data/dates.js'
 import { booking, cfp, etransfer, location, phone } from '../../data/site.js'
 import { holdsSeat, isUnpaid } from '../status.js'
+import { calendarAttachment, googleCalendarLink } from './calendar.js'
 import { renderEmail } from './layout.js'
 
 const dateLabel = (startDate) => weekendParts(startDate).label
@@ -37,6 +38,13 @@ const bringList = (reg) => [
 
 // ---------- To students ----------
 
+// "Add to calendar": a Google Calendar button, and a calendar file attached for Apple Calendar, Outlook and the rest.
+const calendarBlocks = (reg) => [
+  { button: { label: 'Add to Google Calendar', url: googleCalendarLink(reg) } },
+  { small: 'Using Apple Calendar, Outlook or another app? Open the attached calendar file (firearms-course.ics) to add the course.' },
+]
+const withCalendar = (email, reg) => ({ ...email, attachments: [calendarAttachment(reg)] })
+
 /** The cancel reason the portal records when the owner removes an unpaid student. */
 export const UNPAID_REASON = 'Not paid'
 
@@ -58,7 +66,7 @@ export function registrationReceived(reg) {
 }
 
 export function paymentConfirmed(reg, { amountPaidCents, siteUrl }) {
-  return renderEmail({
+  return withCalendar(renderEmail({
     subject: `You're confirmed: ${reg.packageTitle}, ${dateLabel(reg.startDate)}`,
     preheader: `Payment received. See you on ${dateLabel(reg.startDate)}.`,
     blocks: [
@@ -74,17 +82,18 @@ export function paymentConfirmed(reg, { amountPaidCents, siteUrl }) {
         ],
       },
       { button: { label: 'Map and directions', url: mapUrl } },
+      ...calendarBlocks(reg),
       { h: 'Before you come' },
       { list: bringList(reg) },
       { p: 'Allow for the full scheduled course and exam time, and avoid making other plans that day.' },
       { small: `Under 18? Bring the signed parent/guardian consent form: ${siteUrl}/consent` },
       { small: `For licence or application questions, contact the Canadian Firearms Program at ${cfp.phoneDisplay}. ${replyLine}` },
     ],
-  })
+  }), reg)
 }
 
 export function classReminder(reg) {
-  return renderEmail({
+  return withCalendar(renderEmail({
     subject: `See you this weekend: ${dateLabel(reg.startDate)}`,
     preheader: `${scheduleFor(reg.packageId)} at ${location.name}.`,
     blocks: [
@@ -92,11 +101,12 @@ export function classReminder(reg) {
       { p: `A reminder that your ${reg.packageTitle} is coming up.` },
       { details: [['Dates', dateLabel(reg.startDate)], ['You attend', scheduleFor(reg.packageId)], ['Where', where]] },
       { button: { label: 'Map and directions', url: mapUrl } },
+      ...calendarBlocks(reg),
       { h: 'Before you come' },
       { list: bringList(reg) },
       { small: `Running late or can’t make it? Call ${phone.display} as soon as possible. Rescheduling within 48 hours of the course is not possible.` },
     ],
-  })
+  }), reg)
 }
 
 export function registrationCancelled(reg, { refundCents = 0 }) {
@@ -119,16 +129,17 @@ export function registrationCancelled(reg, { refundCents = 0 }) {
 }
 
 export function registrationMoved(reg, { fromStartDate }) {
-  return renderEmail({
+  return withCalendar(renderEmail({
     subject: `Your course date changed to ${dateLabel(reg.startDate)}`,
     preheader: `Moved from ${dateLabel(fromStartDate)} to ${dateLabel(reg.startDate)}.`,
     blocks: [
       { p: `Hi ${reg.student.firstName},` },
       { p: `As arranged, your ${reg.packageTitle} has moved from ${dateLabel(fromStartDate)} to ${dateLabel(reg.startDate)}.` },
       { details: [['New dates', dateLabel(reg.startDate)], ['You attend', scheduleFor(reg.packageId)], ['Where', where], ['Reference', reg.reference]] },
-      { small: replyLine },
+      ...calendarBlocks(reg),
+      { small: `If you added the old date to your calendar, remove it there. ${replyLine}` },
     ],
-  })
+  }), reg)
 }
 
 // ---------- To staff ----------

@@ -18,11 +18,13 @@ npm run preview       # serve the built site locally
 npm run lint
 npm test              # unit tests, a few seconds (see below)
 npm run test:e2e      # end-to-end tests in a browser (see below)
-npm run db:setup      # create database indexes and load the starting course weekends
+npm run db:setup      # create database indexes and load the starting course weekends (test database)
 npm run db:seed-test  # refill the test database with sample data (see below)
-npm run staff:create  # add a staff login (see below)
-npm run deploy        # build and upload to Cloudflare
+npm run staff:create  # add a staff login, or reset one's password with --reset (test database; see below)
 ```
+
+Everything on your computer uses the **test database**. Only GitHub touches the live one: merging to `main` deploys
+the site, and the **Live database** workflow runs the scripts against it (see below).
 
 ## Where things live
 
@@ -47,8 +49,8 @@ There are two databases in the same Atlas cluster:
 
 | Database | Used by | Contents |
 | --- | --- | --- |
-| `fac` | The live site (`MONGODB_DB` in `wrangler.jsonc`) | Real students, payments and staff |
-| `fac_test` | `npm run dev` and the scripts on your computer (`MONGODB_DB` in `.env`) | Sample data to try things on |
+| `fac` | The live site, set only by the GitHub deploy (`wrangler deploy --var MONGODB_DB:fac` in `ci.yml`) | Real students, payments and staff |
+| `fac_test` | Everything on your computer: `npm run dev`, `npm run preview` and the scripts (the default everywhere) | Sample data to try things on |
 
 `npm run db:seed-test` wipes the test database and refills it with sample data, dated relative to today:
 - **Weekends:** two finished weekends with attendance, a nearly full next weekend, a full one, one closed early, one
@@ -60,19 +62,51 @@ There are two databases in the same Atlas cluster:
 It also creates three test-only logins: `owner@fac.test`, `ian@fac.test` and `ivy@fac.test`, with passwords in
 `scripts/seed-test-data.mjs`. Run it again whenever you want a fresh copy. It refuses to run against `fac`.
 
-To run a script against the live database instead, prefix it, for example
-`MONGODB_DB=fac npm run staff:create -- --email … --name "…"`.
+**Live data is only changed through GitHub.** The scripts and `npm run dev` refuse `MONGODB_DB=fac` unless they are
+running in GitHub Actions (`src/lib/databases.js`). There is no deploy command for your computer. To change live data
+outside the portal, use the **Live database** workflow (`.github/workflows/live-database.yml`): GitHub → Actions →
+Live database → Run workflow, then pick a task:
+- `setup`: create the indexes and add any missing starting weekends (`npm run db:setup`). A starting weekend deleted in
+  the portal comes back, so only run it on a new database or after adding dates to `scripts/seed-dates.mjs`.
+- `add-staff` or `reset-password`: add a login, or set a new password and sign the person out everywhere. Use these when
+  no owner can sign in; otherwise owners do this on the portal's Staff page. Set the password first as the repository
+  secret `STAFF_PASSWORD` (at least 12 characters), then delete the secret once the person has it. The repository is
+  public, so the workflow's log is too: it never prints the password, and hides the email and name.
+
+It needs the repository secret `LIVE_MONGODB_URI` (the same connection string as Cloudflare's `MONGODB_URI` secret).
+
+**Make it a lock, not just a guard.** The code checks only stop mistakes; anyone holding the live connection string
+can still reach `fac`. In MongoDB Atlas (Database Access), give your computer its own database user with the
+`readWrite` role on `fac_test` only, and put that user in `.env`. Keep the user that can reach `fac` only in Cloudflare
+(`MONGODB_URI`) and GitHub (`LIVE_MONGODB_URI`), so no copy of it lives on a laptop.
 
 1. Copy `.env.example` to `.env` and fill it in (MongoDB connection string, a generated `BETTER_AUTH_SECRET`,
-   `CRON_SECRET`). `npm run dev` and the scripts read it. For the live site, store the same values as Cloudflare
-   secrets (see Deploying).
+   `CRON_SECRET`). `npm run dev` and the scripts read it, always against the test database. For the live site, store
+   the values as Cloudflare secrets (see Deploying).
 2. `npm run db:setup` creates the indexes and loads any missing course weekends from `scripts/seed-dates.mjs`.
-   It is safe to run again. For the test database, `npm run db:seed-test` does this and adds the sample data.
-3. Create the owner login, then one per instructor. A temporary password is printed once:
+   It is safe to run again. `npm run db:seed-test` does this and adds the sample data. For the live database, run the
+   Live database workflow's `setup` task.
+3. Create the first owner login. On the test database, from the command line (a temporary password is printed once):
 
    ```bash
    npm run staff:create -- --email owner@example.com --name "Owner Name" --role owner
    ```
+
+   To set a new password on an existing login from the command line, use `--reset` instead of `--name` and `--role`.
+   It prints a temporary password, or uses `STAFF_PASSWORD` if set (at least 12 characters), and signs the person out
+   everywhere:
+
+   ```bash
+   npm run staff:create -- --email owner@example.com --reset
+   ```
+
+   On the live database, run the Live database workflow's `add-staff` or `reset-password` task instead.
+
+   After that, owners manage staff in the portal under **Staff** (`/admin/staff`): add owners and instructors, change
+   roles, reset passwords and turn access off or on. New and reset passwords are shown once, on that page only; give them
+   privately. Everyone changes their own password under **Your account** (`/admin/account`, the name in the top bar),
+   which also signs them out on other devices. Owners cannot change their own login on the Staff page, so there is
+   always at least one owner.
 
 4. Sign in at `/admin`. The owner sees everything: dashboard, course weekends (add, edit seats, close, cancel, assign
    instructors), class lists, payments (search by reference, mark paid, remove unpaid students, refunds, moving a student to another weekend)
@@ -114,10 +148,14 @@ works normally and every email is recorded as “Not sent” in the portal’s *
 | Registration received, with e-Transfer details and reference | Student | They register |
 | New registration | Owner | Someone registers |
 | New contact message | Owner | Contact form sent |
-| Course confirmation (dates, which day(s), address, map, what to know) | Student | Owner marks paid (optional on the registration page) |
+| Course confirmation (dates, which day(s), address, map, what to know, add to calendar) | Student | Owner marks paid (optional on the registration page) |
 | Moved / cancelled (with refund amount, or a "not paid" note when the owner removes an unpaid student) | Student | Owner moves, cancels or removes (optional on the registration page) |
 | Class reminder | Student (paid) | 3 days before the course, after 9 a.m. Toronto time |
 | Class list | Instructors assigned to the weekend | 2 days before the course, after 9 a.m. |
+
+The course confirmation, the class reminder and the "date changed" email include **add to calendar**: an "Add to Google
+Calendar" button, and an attached calendar file (`firearms-course.ics`) for Apple Calendar, Outlook and other apps, with
+one all-day event per course day (the site does not publish class times). It is built in `src/lib/email/calendar.js`.
 
 Templates are in `src/lib/email/templates.js`. Emails use inline styles because email apps ignore stylesheets (the one
 exception to the site's Tailwind-only styling). A failed email never blocks a registration or a staff action; it shows as
@@ -143,6 +181,8 @@ mistake would cost money or seats, or garble an email:
 | `src/lib/admin.test.js` | Reading typed dollar amounts (including "158,30"), redirects, access rules, error messages |
 | `src/lib/email/templates.test.js` | Email wording, class lists, HTML escaping of anything a visitor typed |
 | `src/lib/store.test.js` | Booking rules against an in-memory MongoDB: server-side prices, never overselling, payments, cancelling, moving, claiming each scheduled email once |
+| `src/lib/email/calendar.test.js` | Calendar files and Google Calendar links in course emails, temporary passwords |
+| `src/lib/databases.test.js` | Scripts use the test database, and the live one only inside GitHub Actions |
 
 ## End-to-end tests (Playwright)
 
@@ -174,6 +214,7 @@ it cannot pick up a new build while running.
 | `e2e/contact.spec.js` | Contact form to owner email and the portal's messages |
 | `e2e/admin-access.spec.js` | Sign in and out, safe redirects, no caching, owner vs instructor access |
 | `e2e/admin-payments.spec.js` | Unpaid list, Mark paid, Remove (with its confirmation), reference search, cash payments |
+| `e2e/staff.spec.js` | Staff page (add a login, role, reset password, access off and on, own login protected) and changing your own password |
 | `e2e/admin-weekends.spec.js` | Adding and editing weekends, closing and cancelling, assigning instructors, moving and cancelling students, course-day details |
 | `e2e/accessibility.spec.js` | Accessibility (axe-core: WCAG 2.0–2.2 A and AA plus best practices) at desktop and phone size: every page, the open mobile menu, form errors and confirmations, the staff portal for owner and instructor, and the keyboard "Skip to content" link |
 | `e2e/seo.spec.js` | Every public page has its own title and description, one main heading and the right canonical address |
@@ -198,9 +239,10 @@ enough for checking staff passwords at sign-in.
    ```
 
    Repeat for `BETTER_AUTH_SECRET`, `CRON_SECRET` and, when email is ready, `RESEND_API_KEY`, `EMAIL_FROM`,
-   `EMAIL_REPLY_TO`, `OWNER_NOTIFY_EMAIL`. `MONGODB_DB` and `BETTER_AUTH_URL` are set in `wrangler.jsonc`.
-3. Deploys normally happen on GitHub (see below). `npm run deploy` still builds and uploads straight from your computer
-   when needed.
+   `EMAIL_REPLY_TO`, `OWNER_NOTIFY_EMAIL`. `BETTER_AUTH_URL` is set in `wrangler.jsonc`. `MONGODB_DB` is `fac_test`
+   there, so anything run on a computer uses test data; the GitHub deploy overrides it with `fac`.
+3. Deploys happen only on GitHub (see below). There is no deploy command for a computer: a plain `wrangler deploy`
+   would leave the live site on the test database.
 4. The site's domain is set in three places, which must match: `SITE_URL` in `astro.config.mjs`, and `BETTER_AUTH_URL`
    and `routes` in `wrangler.jsonc`. On deploy, Cloudflare creates the domain's DNS record and HTTPS certificate (the
    domain's DNS must be on Cloudflare). The `workers.dev` address is turned off, so the site has one address.
@@ -236,8 +278,12 @@ Two things to know when working on the site:
 
 `.github/workflows/ci.yml` runs on GitHub:
 - **Every pull request:** lint, unit tests and end-to-end tests. The result shows on the pull request.
-- **Every merge (push) to `main`:** the same checks, then, only if they all pass, a build and `wrangler deploy` to
-  Cloudflare. Both appear under the repository's **Actions** tab. A failing test blocks the deploy.
+- **Every merge (push) to `main`:** the same checks, then, only if they all pass, a build and
+  `wrangler deploy --var MONGODB_DB:fac` to Cloudflare. Both appear under the repository's **Actions** tab. A failing
+  test blocks the deploy.
+
+`.github/workflows/live-database.yml` (**Live database**) runs only when started by hand. See "Database and staff
+portal" for its tasks and the `LIVE_MONGODB_URI` and `STAFF_PASSWORD` secrets.
 
 One-time setup:
 1. **Cloudflare API token.** In the Cloudflare dashboard, go to My Profile → API Tokens → Create Token, and use the

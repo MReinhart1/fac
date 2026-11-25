@@ -1,0 +1,79 @@
+---
+// /admin/account — any signed-in staff member sees their details and changes their own password.
+// Changing it signs out every other device; this one stays signed in with a fresh session.
+import AdminLayout from '../../layouts/AdminLayout.astro'
+import { actorOf, redirectWith, roleLabel } from '../../lib/admin.js'
+import { getAuth } from '../../lib/auth.js'
+import { store } from '../../lib/db.js'
+
+export const prerender = false
+
+const MIN_LENGTH = 12
+const user = Astro.locals.user
+let error = ''
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData()
+  const currentPassword = String(form.get('currentPassword') ?? '')
+  const newPassword = String(form.get('newPassword') ?? '')
+  const confirmPassword = String(form.get('confirmPassword') ?? '')
+
+  if (newPassword.length < MIN_LENGTH) error = `Use at least ${MIN_LENGTH} characters for the new password.`
+  else if (newPassword !== confirmPassword) error = 'The two new passwords do not match.'
+  else if (newPassword === currentPassword) error = 'Choose a new password that is different from the current one.'
+  else {
+    const result = await getAuth().api.changePassword({
+      body: { currentPassword, newPassword, revokeOtherSessions: true },
+      headers: Astro.request.headers,
+      asResponse: true,
+    })
+    if (result.ok) {
+      await store().audit(actorOf(user), 'staff.password-change', { type: 'user', id: user.id })
+      // Keep this browser signed in: pass the new session cookie through, then show the confirmation.
+      const done = redirectWith(Astro.redirect, '/admin/account', 'Password changed. Other devices have been signed out.')
+      const headers = new Headers(done.headers)
+      for (const cookie of result.headers.getSetCookie()) headers.append('Set-Cookie', cookie)
+      return new Response(null, { status: 303, headers })
+    }
+    const body = await result.json().catch(() => ({}))
+    error = body.code === 'INVALID_PASSWORD' ? 'Your current password is not right.' : 'The password could not be changed. Please try again.'
+  }
+}
+---
+
+<AdminLayout title="Your account">
+  <div class="grid max-w-md gap-6">
+    <section class="card p-6" aria-labelledby="details-heading">
+      <h2 id="details-heading" class="card-heading">Your details</h2>
+      <dl class="grid grid-cols-[6rem_1fr] gap-y-2 text-sm">
+        <dt class="text-muted">Name</dt>
+        <dd>{user.name}</dd>
+        <dt class="text-muted">Email</dt>
+        <dd>{user.email}</dd>
+        <dt class="text-muted">Role</dt>
+        <dd>{roleLabel(user.role)}</dd>
+      </dl>
+      <p class="small-note">To change your name or email, ask the owner.</p>
+    </section>
+
+    <form method="post" class="card grid gap-4 p-6" aria-labelledby="password-heading">
+      <h2 id="password-heading" class="card-heading mb-0">Change your password</h2>
+      <label class="field-label">
+        Current password
+        <input class="field" type="password" name="currentPassword" required autocomplete="current-password" />
+      </label>
+      <label class="field-label">
+        New password
+        <input class="field" type="password" name="newPassword" required minlength={MIN_LENGTH} maxlength="128" autocomplete="new-password" aria-describedby="password-help" />
+      </label>
+      <label class="field-label">
+        New password again
+        <input class="field" type="password" name="confirmPassword" required minlength={MIN_LENGTH} maxlength="128" autocomplete="new-password" />
+      </label>
+      <p id="password-help" class="small-note mt-0">At least {MIN_LENGTH} characters. A short sentence you will remember works well.</p>
+      {error && <p class="rounded-lg bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-ink" role="alert">{error}</p>}
+      <div><button class="btn btn-navy" type="submit">Change password</button></div>
+      <p class="small-note mt-0">Changing your password signs you out on every other device.</p>
+    </form>
+  </div>
+</AdminLayout>

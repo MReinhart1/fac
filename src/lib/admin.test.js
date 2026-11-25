@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { canSee, centsFrom, messageFor, nullIfNotFound, redirectWith, statusOf, weekendStatus } from './admin.js'
+import { canSee, centsFrom, messageFor, nullIfNotFound, redirectWith, statusOf, temporaryPassword, weekendStatus } from './admin.js'
 import { ROLES } from './auth-config.js'
 import { errorResponse, firstIssue } from './http.js'
 import { StoreError } from './store.js'
@@ -113,5 +113,22 @@ describe('API error responses', () => {
   it('reports the first validation problem', () => {
     expect(firstIssue({ error: { issues: [{ message: 'First name is required.' }, { message: 'Phone is required.' }] } })).toBe('First name is required.')
     expect(firstIssue({ error: { issues: [] } })).toBe('Please check the form and try again.')
+  })
+})
+
+describe('temporaryPassword', () => {
+  it('is 16 easy-to-read characters in groups of four, different every time', () => {
+    const passwords = new Set(Array.from({ length: 200 }, () => temporaryPassword()))
+    expect(passwords.size).toBe(200)
+    for (const password of passwords) expect(password).toMatch(/^[A-HJ-NP-Za-km-np-z2-9]{4}(-[A-HJ-NP-Za-km-np-z2-9]{4}){3}$/)
+  })
+
+  it('never uses characters that are easy to confuse (0, O, 1, l, I, o)', () => {
+    const all = Array.from({ length: 500 }, () => temporaryPassword()).join('')
+    expect(all).not.toMatch(/[0O1lIo]/)
+  })
+
+  it('is long enough for the 12-character minimum', () => {
+    expect(temporaryPassword().length).toBeGreaterThanOrEqual(12)
   })
 })

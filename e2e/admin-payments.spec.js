@@ -29,6 +29,10 @@ test('"Mark paid" records the payment and emails the confirmation', async ({ pag
   expect(reg.payments).toEqual([expect.objectContaining({ kind: 'payment', method: 'e-Transfer', amountCents: 25_830 })])
   const confirmation = (await emails()).find((email) => email.subject.startsWith("You're confirmed"))
   expect(confirmation.to).toEqual(['pat@example.test'])
+  // It carries the course as a calendar invite, and a Google Calendar button.
+  expect(confirmation.attachments).toEqual([expect.objectContaining({ filename: 'firearms-course.ics' })])
+  expect(Buffer.from(confirmation.attachments[0].content, 'base64').toString()).toContain(`DTSTART;VALUE=DATE:${weekends.open.startDate.replaceAll('-', '')}`)
+  expect(confirmation.html).toContain('calendar.google.com')
 })
 
 test('"Remove" cancels an unpaid registration, frees the seat and tells the student', async ({ page, db, emails, signIn, weekends, register }) => {

@@ -1,0 +1,95 @@
+# Changes to the LIVE database ("fac") that the staff portal cannot make. Scripts on a computer refuse the live
+# database (src/lib/databases.js), so this is the only way to run them against it.
+#
+# Run it by hand: GitHub → Actions → "Live database" → Run workflow. Only people with write access to the repository
+# can. Tasks:
+#   setup           create the indexes and add any starting course weekends that are missing (npm run db:setup).
+#                   Careful: a starting weekend that was deleted in the portal comes back.
+#   add-staff       add a staff login (npm run staff:create). For normal use, owners do this on the portal's Staff page.
+#   reset-password  set a new password on a login and sign it out everywhere, e.g. when no owner can sign in.
+#
+# Repository secrets it needs (Settings → Secrets and variables → Actions):
+#   LIVE_MONGODB_URI  the live connection string (the same as the MONGODB_URI secret stored in Cloudflare)
+#   STAFF_PASSWORD    for add-staff and reset-password: the password to set, at least 12 characters. Set it just before
+#                     running, give it to the person privately, then delete the secret; they change it under Your account.
+#
+# The repository is public, so this run's log is too: the workflow never prints a password, and hides the email and
+# name it is given.
+name: Live database
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: What to do
+        type: choice
+        options: [setup, add-staff, reset-password]
+        required: true
+      email:
+        description: Staff email (add-staff, reset-password)
+        type: string
+      name:
+        description: Full name (add-staff)
+        type: string
+      role:
+        description: Role (add-staff)
+        type: choice
+        options: [instructor, owner]
+        default: instructor
+
+# One change to the live database at a time.
+concurrency:
+  group: live-database
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: ${{ inputs.task }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      MONGODB_DB: fac
+      MONGODB_URI: ${{ secrets.LIVE_MONGODB_URI }}
+      # Inputs reach the commands as environment variables, never pasted into the script text.
+      STAFF_EMAIL: ${{ inputs.email }}
+      STAFF_NAME: ${{ inputs.name }}
+      STAFF_ROLE: ${{ inputs.role }}
+      # These commands do not run the tests, so skip downloading the test MongoDB.
+      MONGOMS_DISABLE_POSTINSTALL: 1
+    steps:
+      - name: Hide the email and name in this public log
+        run: |
+          if [ -n "$STAFF_EMAIL" ]; then echo "::add-mask::$STAFF_EMAIL"; fi
+          if [ -n "$STAFF_NAME" ]; then echo "::add-mask::$STAFF_NAME"; fi
+          if [ -z "$MONGODB_URI" ]; then
+            echo "::error::Add the LIVE_MONGODB_URI repository secret first."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Set up the database
+        if: inputs.task == 'setup'
+        run: npm run db:setup
+
+      - name: Add a staff login
+        if: inputs.task == 'add-staff'
+        env:
+          STAFF_PASSWORD: ${{ secrets.STAFF_PASSWORD }}
+        run: npm run staff:create -- --email "$STAFF_EMAIL" --name "$STAFF_NAME" --role "$STAFF_ROLE"
+
+      - name: Reset a password
+        if: inputs.task == 'reset-password'
+        env:
+          STAFF_PASSWORD: ${{ secrets.STAFF_PASSWORD }}
+        run: npm run staff:create -- --email "$STAFF_EMAIL" --reset

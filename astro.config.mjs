@@ -42,7 +42,8 @@ export default defineConfig({
   env: {
     schema: {
       MONGODB_URI: envField.string({ context: 'server', access: 'secret' }),
-      MONGODB_DB: envField.string({ context: 'server', access: 'secret', default: 'fac' }),
+      // The test database unless told otherwise; only the GitHub deploy sets the live one (see src/lib/databases.js).
+      MONGODB_DB: envField.string({ context: 'server', access: 'secret', default: 'fac_test' }),
       BETTER_AUTH_SECRET: envField.string({ context: 'server', access: 'secret' }),
       BETTER_AUTH_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
       CRON_SECRET: envField.string({ context: 'server', access: 'secret', optional: true }),

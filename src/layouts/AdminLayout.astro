@@ -18,6 +18,7 @@ const links = [
   { href: '/admin/payments', label: 'Payments', ownerOnly: true },
   { href: '/admin/messages', label: 'Messages', ownerOnly: true },
   { href: '/admin/emails', label: 'Emails', ownerOnly: true },
+  { href: '/admin/staff', label: 'Staff', ownerOnly: true },
 ].filter((link) => !link.ownerOnly || isOwner(user))
 const current = (href: string) => (href === '/admin' ? path === '/admin' : path.startsWith(href))
 ---
@@ -51,9 +52,9 @@ const current = (href: string) => (href === '/admin' ? path === '/admin' : path.
               ))}
             </nav>
             <form method="post" action="/admin/logout" class="flex items-center gap-3 text-sm">
-              <span class="text-cream/75">
-                {user.name} · {roleLabel(user.role)}
-              </span>
+              <a class="rounded-md px-2 py-1 text-cream/75 hover:bg-cream/10 hover:text-cream" href="/admin/account" aria-current={current('/admin/account') ? 'page' : undefined}>
+                {user.name} · {roleLabel(user.role)}<span class="sr-only">: your account</span>
+              </a>
               <button class="cursor-pointer rounded-md px-3 py-1.5 font-semibold ring-1 ring-cream/40 hover:bg-cream/10" type="submit">
                 Sign out
               </button>

@@ -6,12 +6,15 @@ import { COLLECTIONS } from '../mongo.js'
 
 /**
  * @param {{ to: string | string[], template: string, subject: string, html: string, text: string,
- *           registrationId?: string, idempotencyKey?: string }} email
+ *           registrationId?: string, idempotencyKey?: string,
+ *           attachments?: { filename: string, content: string, content_type?: string }[] }} email
  * @returns {Promise<'sent' | 'skipped' | 'failed'>}
  */
-export async function sendEmail({ to, template, subject, html, text, registrationId, idempotencyKey }) {
+export async function sendEmail({ to, template, subject, html, text, registrationId, idempotencyKey, attachments }) {
   const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean)
   const entry = { at: new Date(), to: recipients, template, subject, registrationId: registrationId ?? null }
+  // The log keeps attachment names only, never their contents.
+  if (attachments?.length) entry.attachments = attachments.map((file) => file.filename)
 
   let status = 'sent'
   let providerId = null
@@ -38,6 +41,7 @@ export async function sendEmail({ to, template, subject, html, text, registratio
           html,
           text,
           ...(EMAIL_REPLY_TO ? { reply_to: EMAIL_REPLY_TO } : {}),
+          ...(attachments?.length ? { attachments } : {}),
           tags: [{ name: 'template', value: template.replaceAll(/[^a-zA-Z0-9_-]/g, '_') }],
         }),
         signal: AbortSignal.timeout(8000),
