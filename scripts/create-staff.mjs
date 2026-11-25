@@ -6,7 +6,7 @@
 // Set STAFF_PASSWORD to choose the password instead of generating one (at least 12 characters).
 // On your computer it uses the test database (fac_test). The live site's logins are changed on the portal's Staff page,
 // or, if no owner can sign in, by the "Live database" workflow on GitHub, which runs this script with STAFF_PASSWORD
-// from a repository secret (it never prints a password there: the repository's workflow logs are public).
+// from the workflow's Password box (it never prints a password there: the repository's workflow logs are public).
 import { randomBytes } from 'node:crypto'
 import { parseArgs } from 'node:util'
 import { createAuth, ROLES } from '../src/lib/auth-config.js'
@@ -33,7 +33,7 @@ if (!values.email || (!values.reset && (!values.name || !['owner', 'instructor']
   process.exit(1)
 }
 if (onGitHubActions(process.env) && !process.env.STAFF_PASSWORD) {
-  console.error('Set the STAFF_PASSWORD repository secret first: a generated password would be printed in the public workflow log.')
+  console.error('Type a password in the workflow\'s Password box: a generated one would be printed in the public log.')
   process.exit(1)
 }
 const password = process.env.STAFF_PASSWORD || randomBytes(12).toString('base64url')
